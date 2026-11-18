@@ -44,7 +44,7 @@ def read_log(source) -> pd.DataFrame:
     log = raw[list(LOG_COLUMNS)].rename(columns=LOG_COLUMNS).apply(lambda column: column.str.strip())
     log["object_id"] = log["top_photo_id"].str.replace(r"-atas$", "", regex=True, flags=re.IGNORECASE)
     log["label"] = log["label"].str.lower()
-    log["subtype"] = subtypes.apply(lambda row: next((v.strip() for v in row if v.strip()), ""), axis=1)
+    log["subtype"] = subtypes.apply(lambda row: next((v.strip() for v in row if v.strip()), ""), axis=1).str.lower()
     log["lighting"] = log["lighting"].str.split(" (", regex=False).str[0]
     log["submitted_at"] = pd.to_datetime(log["submitted_at"], format="%m/%d/%Y %H:%M:%S", errors="coerce")
     log["taken_on"] = pd.to_datetime(log["taken_on"], format="%m/%d/%Y", errors="coerce").dt.date

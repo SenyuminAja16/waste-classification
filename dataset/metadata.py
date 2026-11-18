@@ -1,14 +1,22 @@
 """Validasi log akuisisi dan pengukuran kondisi setiap foto."""
 
 import re
+from pathlib import Path
 
+import cv2
 import pandas as pd
+from PIL import Image
+
+from core.image import load_image
 
 LABEL_CODES = {"PL": "plastik", "KT": "kertas", "KD": "kardus"}
 MEMBER_CODES = {"M": "Mafaza", "F": "Farhan", "J": "Jefri"}
 OBJECT_ID_PATTERN = re.compile(r"^(PL|KT|KD)-(M|F|J)-\d{3}$")
 DOWNLOAD_OK = {"downloaded", "exists"}
 ISSUE_COLUMNS = ["object_id", "view", "check", "detail"]
+
+ANALYSIS_SIZE = 512
+EXIF_IFD, EXIF_DATETIME_ORIGINAL, EXIF_DATETIME, EXIF_MAKE, EXIF_MODEL = 0x8769, 36867, 306, 271, 272
 
 
 def validate(log: pd.DataFrame, photos: pd.DataFrame) -> pd.DataFrame:
@@ -50,3 +58,28 @@ def check_downloads(photos: pd.DataFrame):
 
 def issue(object_id: str, check: str, detail: str, view: str = "") -> dict:
     return {"object_id": object_id, "view": view, "check": check, "detail": detail}
+
+
+def measure_photo(path: str | Path) -> dict:
+    """Resolusi, ketajaman, kecerahan, kontras, waktu jepret, dan kamera satu foto."""
+    with Image.open(path) as image:
+        exif = image.getexif()
+    taken_at = exif.get_ifd(EXIF_IFD).get(EXIF_DATETIME_ORIGINAL) or exif.get(EXIF_DATETIME)
+    camera = " ".join(str(exif.get(tag, "")).strip() for tag in (EXIF_MAKE, EXIF_MODEL)).strip()
+
+    image = load_image(path)
+    height, width = image.shape[:2]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    scale = ANALYSIS_SIZE / max(height, width)
+    gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+
+    return {
+        "width": width,
+        "height": height,
+        "orientation": "portrait" if height > width else "landscape",
+        "sharpness": float(cv2.Laplacian(gray, cv2.CV_64F).var()),
+        "brightness": float(gray.mean()),
+        "contrast": float(gray.std()),
+        "taken_at": pd.to_datetime(taken_at, format="%Y:%m:%d %H:%M:%S", errors="coerce"),
+        "camera": camera,
+    }

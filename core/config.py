@@ -13,7 +13,7 @@ SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
 PHOTO_CACHE_DIR = ROOT / "cache" / "photos"
 FEATURES_CACHE_DIR = ROOT / "cache" / "features"
 REPORTS_DIR = ROOT / "reports"
-MODELS_DIR = Path(os.environ.get("WASTE_MODELS_DIR", ROOT / "models"))
+MODELS_DIR = Path(os.environ.get("WASTE_MODELS_DIR") or ROOT / "models")
 
 SHEET_ID = os.environ.get("WASTE_SHEET_ID", "")
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/{}/gviz/tq?tqx=out:csv&sheet=Form%20Responses%201"

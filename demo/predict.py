@@ -6,11 +6,11 @@ from pathlib import Path
 
 import numpy as np
 
-from config import CLASSES, MODELS_DIR, SCENARIOS
-from src import dl
-from src.features import extract_features
-from src.pcd import run_pcd
-from src.utils import resize_43
+from core.config import CLASSES, MODELS_DIR, SCENARIOS
+from core.image import resize_43
+from dl import models as dl
+from ml.features import extract_features
+from pcd.pipeline import run_pcd
 
 
 class ModelNotFound(Exception):

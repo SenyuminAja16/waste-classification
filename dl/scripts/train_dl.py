@@ -6,8 +6,8 @@ Augmentasi (flip, rotasi kecil, brightness/contrast) hanya untuk data train.
 
 Butuh torch + torchvision.
 Pemakaian:
-    python scripts/train_dl.py --scenario pcd
-    python scripts/train_dl.py --scenario raw --epochs-head 5 --epochs-ft 15 --batch 16
+    python -m dl.scripts.train_dl --scenario pcd
+    python -m dl.scripts.train_dl --scenario raw --epochs-head 5 --epochs-ft 15 --batch 16
 """
 import argparse
 import copy
@@ -16,17 +16,15 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
 
-from config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
-from src import dl
-from src.evaluate import evaluate, print_metrics, save_report
-from src.pcd import run_pcd
-from src.utils import load_image, resize_43
+from core.config import CLASSES, MODELS_DIR, REPORTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
+from core.evaluate import evaluate, print_metrics, save_report
+from core.image import load_image, resize_43
+from dl import models as dl
+from pcd.pipeline import run_pcd
 
 DL_SCENARIO = {"pcd": 3, "raw": 4}
 
@@ -67,7 +65,7 @@ def main():
     print("device:", device)
 
     if not a.split.exists():
-        sys.exit(f"{a.split} belum ada. Jalankan dulu: python scripts/prepare_dataset.py")
+        sys.exit(f"{a.split} belum ada. Jalankan dulu: python -m dataset.scripts.prepare_dataset")
     df = pd.read_csv(a.split)
     if not {"train", "val", "test"} <= set(df.subset):
         sys.exit("Deep Learning butuh split train/val/test. Data belum cukup (lihat catatan prepare_dataset.py).")
@@ -151,8 +149,8 @@ def main():
     torch.save(best["state"], out)
     print(f"[{a.scenario}] model disimpan: {out}")
     save_report(f"dl_{a.scenario}", m, {"best_epoch": best["epoch"], "val_f1": best["f1"], "args": vars(a) | {"split": str(a.split)}})
-    RESULTS_DIR.mkdir(exist_ok=True)
-    (RESULTS_DIR / f"dl_{a.scenario}_history.json").write_text(json.dumps(history, indent=2))
+    REPORTS_DIR.mkdir(exist_ok=True)
+    (REPORTS_DIR / f"dl_{a.scenario}_history.json").write_text(json.dumps(history, indent=2))
 
 
 if __name__ == "__main__":

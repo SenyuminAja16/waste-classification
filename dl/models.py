@@ -2,7 +2,7 @@
 
 >>> BAGIAN YANG DIISI SENDIRI (DL) <<<
 
-Kontrak (dipakai scripts/train_dl.py DAN src/predict.py, jadi harus konsisten):
+Kontrak (dipakai dl/scripts/train_dl.py DAN demo/predict.py, jadi harus konsisten):
 
     build_model(pretrained: bool) -> torch.nn.Module
         keluaran: len(config.CLASSES) logit
@@ -23,16 +23,16 @@ Butuh: pip install torch torchvision
 
 
 def build_model(pretrained: bool = True):
-    raise NotImplementedError("Isi build_model() di src/dl.py")
+    raise NotImplementedError("Isi build_model() di dl/models.py")
 
 
 def set_trainable(model, mode: str):
-    raise NotImplementedError("Isi set_trainable() di src/dl.py")
+    raise NotImplementedError("Isi set_trainable() di dl/models.py")
 
 
 def to_rgb224(img_bgr):
-    raise NotImplementedError("Isi to_rgb224() di src/dl.py")
+    raise NotImplementedError("Isi to_rgb224() di dl/models.py")
 
 
 def to_tensor(rgb):
-    raise NotImplementedError("Isi to_tensor() di src/dl.py")
+    raise NotImplementedError("Isi to_tensor() di dl/models.py")

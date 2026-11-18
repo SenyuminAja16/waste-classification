@@ -1,13 +1,13 @@
 """Demo klasifikasi sampah: upload foto → pilih skenario → lihat hasil.
 
-Jalankan:  streamlit run app.py
+Jalankan:  streamlit run demo/app.py
 """
 import cv2
 import streamlit as st
 
-from config import CLASS_INFO, CLASSES, SCENARIOS
-from src.utils import load_image
-from src.predict import ModelNotFound, model_available, model_path, predict
+from core.config import CLASS_INFO, CLASSES, SCENARIOS
+from core.image import load_image
+from demo.predict import ModelNotFound, model_available, model_path, predict
 
 st.set_page_config(page_title="Klasifikasi Sampah", page_icon="♻️", layout="wide")
 

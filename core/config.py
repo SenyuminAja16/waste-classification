@@ -10,7 +10,7 @@ load_dotenv(ROOT / ".env")
 
 DATA_DIR = ROOT / "data"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
-PHOTO_CACHE_DIR = ROOT / "cache" / "photos"
+RAW_DIR = DATA_DIR / "raw"
 FEATURES_CACHE_DIR = ROOT / "cache" / "features"
 REPORTS_DIR = ROOT / "reports"
 MODELS_DIR = Path(os.environ.get("WASTE_MODELS_DIR") or ROOT / "models")

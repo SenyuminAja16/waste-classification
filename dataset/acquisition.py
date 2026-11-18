@@ -1,85 +1,129 @@
-"""Sementara: kerangka awal akuisisi data, diganti di PR dataset/prepare."""
+"""Membaca log akuisisi dari Google Sheet dan mengunduh foto ke data/raw."""
+
 import re
-import sys
+import time
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 from PIL import Image
 
-from core.config import CLASSES, PHOTO_CACHE_DIR, ROOT
+from core.config import DATA_DIR, RAW_DIR
 
-# Kolom sheet dibaca berdasarkan POSISI (ada nama kolom ganda: Sub-tipe x3, Masukkan Foto x2).
-KOLOM = ["timestamp", "id_atas", "id_miring", "anggota", "sesi", "tanggal", "kelas", "sub1", "sub2", "sub3",
-         "lokasi", "latar", "cahaya", "kondisi", "catatan", "perspektif", "url_atas", "url_miring"]
-
-
-def baca_log(src) -> pd.DataFrame:
-    d = pd.read_csv(src, dtype=str).fillna("")
-    if d.shape[1] < len(KOLOM):
-        sys.exit(f"Sheet punya {d.shape[1]} kolom, harusnya minimal {len(KOLOM)}. "
-                 "Cek apakah ini sheet 'Form Responses 1'.")
-    d = d.iloc[:, :len(KOLOM)].copy()
-    d.columns = KOLOM
-    return d
-
-
-def file_id(url: str):
-    m = re.search(r"[?&]id=([\w-]+)|/d/([\w-]+)", url)
-    return (m.group(1) or m.group(2)) if m else None
-
-
-def tabel_foto(sumber) -> pd.DataFrame:
-    """Satu baris sheet (satu objek) -> dua baris (foto atas dan miring)."""
-    log = pd.concat([baca_log(s) for s in sumber], ignore_index=True)
-    rows = []
-    for _, r in log.iterrows():
-        obj = re.sub(r"-(atas|miring)$", "", r.id_atas.strip(), flags=re.I)
-        for posisi, url in (("atas", r.url_atas), ("miring", r.url_miring)):
-            fid = file_id(url)
-            if fid:
-                rows.append(dict(file_id=fid, id_objek=obj, posisi=posisi, kelas=r.kelas.strip().lower(),
-                                 subtipe=next((x for x in (r.sub1, r.sub2, r.sub3) if x.strip()), ""),
-                                 anggota=r.anggota.strip(), sesi=r.sesi.strip(), lokasi=r.lokasi.strip(),
-                                 latar=r.latar.strip(), cahaya=r.cahaya.split(" (")[0].strip(),
-                                 kondisi=r.kondisi.strip()))
-    df = pd.DataFrame(rows).drop_duplicates("file_id").reset_index(drop=True)
-    bad = ~df.kelas.isin(CLASSES)
-    if bad.any():
-        print(f"PERINGATAN: {bad.sum()} foto dibuang, kelas tidak dikenal: {sorted(set(df[bad].kelas))}")
-        df = df[~bad].reset_index(drop=True)
-    cnt = df.groupby("id_objek").size()
-    if (cnt != 2).any():
-        print("PERINGATAN: objek dengan jumlah foto tidak 2 ->", cnt[cnt != 2].to_dict())
-    return df
+LOG_COLUMNS = {
+    "Timestamp": "submitted_at",
+    "ID foto ATAS": "top_photo_id",
+    "ID foto MIRING": "tilted_photo_id",
+    "Anggota": "member",
+    "Tanggal": "taken_on",
+    "Kelas": "label",
+    "Lokasi": "location",
+    "Cahaya": "lighting",
+    "Kondisi objek": "condition",
+    "Catatan": "note",
+}
+SUBTYPE_PREFIX = "Sub-tipe"
+UPLOAD_PREFIX = "Masukkan Foto"
+VIEWS = ("atas", "miring")
+DOWNLOAD_URL = "https://drive.google.com/uc?export=download&id={}"
+DOWNLOAD_RETRIES = 3
 
 
-def unduh(fid: str):
-    """Unduh satu foto dari Drive ke cache/photos/<id>.jpg. None bila gagal."""
-    p = PHOTO_CACHE_DIR / f"{fid}.jpg"
-    if not p.exists():
-        try:
-            import gdown
-            PHOTO_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            gdown.download(f"https://drive.google.com/uc?id={fid}", str(p), quiet=True)
-        except Exception:
-            return None
+def read_log(source) -> pd.DataFrame:
+    """Baca log akuisisi (URL Sheet atau path CSV) menjadi satu baris per isian Form."""
+    raw = pd.read_csv(source, dtype=str).fillna("")
+    missing = [column for column in LOG_COLUMNS if column not in raw.columns]
+    if missing:
+        raise ValueError(f"Kolom tidak ditemukan di log: {missing}")
+
+    subtypes = raw.filter(regex=f"^{SUBTYPE_PREFIX}")
+    uploads = raw.filter(regex=f"^{UPLOAD_PREFIX}")
+    if uploads.shape[1] != len(VIEWS):
+        raise ValueError(f"Kolom upload foto harus {len(VIEWS)}, ditemukan {uploads.shape[1]}")
+
+    log = raw[list(LOG_COLUMNS)].rename(columns=LOG_COLUMNS).apply(lambda column: column.str.strip())
+    log["object_id"] = log["top_photo_id"].str.replace(r"-atas$", "", regex=True, flags=re.IGNORECASE)
+    log["label"] = log["label"].str.lower()
+    log["subtype"] = subtypes.apply(lambda row: next((v.strip() for v in row if v.strip()), ""), axis=1)
+    log["lighting"] = log["lighting"].str.split(" (", regex=False).str[0]
+    log["submitted_at"] = pd.to_datetime(log["submitted_at"], format="%m/%d/%Y %H:%M:%S", errors="coerce")
+    log["taken_on"] = pd.to_datetime(log["taken_on"], format="%m/%d/%Y", errors="coerce").dt.date
+    for view, column in zip(VIEWS, uploads.columns):
+        log[f"url_{view}"] = uploads[column].str.strip()
+    return log
+
+
+def to_photo_table(log: pd.DataFrame) -> pd.DataFrame:
+    """Pecah setiap isian menjadi dua baris foto; kalau ID objek dobel, pakai isian terbaru."""
+    latest = log.sort_values("submitted_at").drop_duplicates("object_id", keep="last")
+    url_columns = [f"url_{view}" for view in VIEWS]
+    photos = pd.concat(
+        [latest.assign(view=view, url=latest[f"url_{view}"]) for view in VIEWS],
+        ignore_index=True,
+    ).drop(columns=url_columns)
+    photos["file_id"] = photos["url"].map(drive_file_id)
+    photos["raw_path"] = [
+        raw_path(label, object_id, view)
+        for label, object_id, view in zip(photos["label"], photos["object_id"], photos["view"])
+    ]
+    return photos.sort_values(["object_id", "view"]).reset_index(drop=True)
+
+
+def drive_file_id(url: str) -> str:
+    """Ambil ID file dari link Drive (format open?id=... atau /d/...)."""
+    match = re.search(r"[?&]id=([\w-]+)|/d/([\w-]+)", url)
+    return (match.group(1) or match.group(2)) if match else ""
+
+
+def raw_path(label: str, object_id: str, view: str) -> str:
+    """Lokasi foto mentah relatif terhadap folder data, misalnya raw/plastik/PL-F-001/PL-F-001-atas.jpg."""
+    path = RAW_DIR / label / object_id / f"{object_id}-{view}.jpg"
+    return path.relative_to(DATA_DIR).as_posix()
+
+
+def download_photos(photos: pd.DataFrame, workers: int = 4) -> pd.DataFrame:
+    """Unduh foto yang belum ada di data/raw dan kembalikan tabel dengan kolom download_status."""
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        statuses = list(pool.map(download_photo, photos["file_id"], photos["raw_path"]))
+    return photos.assign(download_status=statuses)
+
+
+def download_photo(file_id: str, relative_path: str, retries: int = DOWNLOAD_RETRIES) -> str:
+    """Unduh satu foto dan coba ulang kalau gagal; hasilnya exists, downloaded, no_link, failed, atau not_image."""
+    target = DATA_DIR / relative_path
+    if target.exists():
+        return "exists"
+    if not file_id:
+        return "no_link"
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    status = "failed"
+    for attempt in range(retries):
+        if attempt:
+            # Jeda 2 lalu 4 detik memberi waktu saat Drive membatasi unduhan yang terlalu rapat.
+            time.sleep(2**attempt)
+        status = fetch_photo(file_id, target)
+        if status == "downloaded":
+            break
+    return status
+
+
+def fetch_photo(file_id: str, target) -> str:
+    """Satu kali percobaan unduh; file hanya disimpan kalau isinya gambar yang valid."""
+    partial = target.with_suffix(".part")
     try:
-        Image.open(p).verify()
-        return p
-    except Exception:
-        p.unlink(missing_ok=True)  # biasanya halaman "akses ditolak", bukan gambar
-        return None
+        with urllib.request.urlopen(DOWNLOAD_URL.format(file_id), timeout=60) as response:
+            partial.write_bytes(response.read())
+    except OSError:
+        partial.unlink(missing_ok=True)
+        return "failed"
 
+    try:
+        with Image.open(partial) as image:
+            image.verify()
+    except (OSError, SyntaxError):
+        partial.unlink(missing_ok=True)
+        return "not_image"
 
-def muat_tabel_foto(sumber) -> pd.DataFrame:
-    """Tabel foto lengkap dengan kolom `path` (relatif terhadap ROOT). Foto yang gagal diunduh dibuang."""
-    df = tabel_foto(sumber)
-    print(f"Mengunduh/memeriksa {len(df)} foto...")
-    paths = [unduh(f) for f in df.file_id]
-    gagal = sum(p is None for p in paths)
-    if gagal:
-        print(f"PERINGATAN: {gagal} foto gagal diunduh (cek sharing folder Drive 'Anyone with the link').")
-    df["path"] = [p.relative_to(ROOT).as_posix() if p else None for p in paths]
-    df = df.dropna(subset=["path"]).reset_index(drop=True)
-    if df.empty:
-        sys.exit("Tidak ada foto yang bisa dibaca. Lihat petunjuk sharing di README.")
-    return df
+    partial.replace(target)
+    return "downloaded"

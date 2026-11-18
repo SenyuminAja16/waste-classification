@@ -1,4 +1,4 @@
-"""Membaca data dari Google Sheet + Drive."""
+"""Sementara: kerangka awal akuisisi data, diganti di PR dataset/prepare."""
 import re
 import sys
 

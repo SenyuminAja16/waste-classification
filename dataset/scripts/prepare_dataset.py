@@ -1,14 +1,4 @@
-"""Baca sheet log_akuisisi, unduh foto dari Drive, dan buat data/splits/split.csv (dibagi PER OBJEK).
-
-Pemakaian:
-    python -m dataset.scripts.prepare_dataset                       # baca Google Sheet (lihat config.LOG_SOURCES)
-    python -m dataset.scripts.prepare_dataset --sumber log.csv      # atau dari CSV hasil download sheet
-    python -m dataset.scripts.prepare_dataset --sumber a.csv b.csv  # gabungan beberapa sumber
-
-Pembagian: train / val / test = 70 / 15 / 15 per objek, seimbang per kelas.
-Kalau ada kelas dengan objek < config.MIN_OBJECTS_FOR_SPLIT, semua data jadi 'train'
-(train_ml.py lalu hanya memakai cross-validation).
-"""
+"""Sementara: kerangka awal persiapan dataset, diganti di PR dataset/prepare."""
 import argparse
 import math
 import random

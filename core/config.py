@@ -15,7 +15,7 @@ OBJECT_SPLITS_CSV = DATA_DIR / "object_splits.csv"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
 FEATURES_CACHE_DIR = ROOT / "cache" / "features"
 REPORTS_DIR = ROOT / "reports"
-VALIDATION_CSV = REPORTS_DIR / "dataset" / "validation.csv"
+DATASET_SUMMARY = REPORTS_DIR / "dataset" / "summary.md"
 MODELS_DIR = Path(os.environ.get("WASTE_MODELS_DIR") or ROOT / "models")
 
 SHEET_ID = os.environ.get("WASTE_SHEET_ID", "")

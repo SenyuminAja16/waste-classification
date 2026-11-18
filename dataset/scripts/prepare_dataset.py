@@ -4,7 +4,7 @@ import argparse
 
 import pandas as pd
 
-from core.config import DATA_DIR, LOG_SOURCES, METADATA_CSV, OBJECT_SPLITS_CSV, ROOT, VALIDATION_CSV
+from core.config import DATA_DIR, DATASET_SUMMARY, LOG_SOURCES, METADATA_CSV, OBJECT_SPLITS_CSV, ROOT
 from dataset.acquisition import download_photos, read_log, to_photo_table
 from dataset.metadata import validate
 from dataset.split import SPLIT_COLUMNS, assign_splits
@@ -27,6 +27,53 @@ def read_existing_splits() -> pd.DataFrame:
     if OBJECT_SPLITS_CSV.exists():
         return pd.read_csv(OBJECT_SPLITS_CSV, dtype=str)
     return pd.DataFrame(columns=SPLIT_COLUMNS)
+
+
+def split_table(splits: pd.DataFrame) -> pd.DataFrame:
+    """Jumlah objek per kelas dan subset, dengan baris dan kolom total."""
+    table = pd.crosstab(splits["label"], splits["split"], margins=True, margins_name="total")
+    return table.reindex(columns=["train", "val", "test", "total"], fill_value=0).reset_index()
+
+
+def markdown_table(table: pd.DataFrame) -> str:
+    header = "| " + " | ".join(map(str, table.columns)) + " |"
+    divider = "|" + "|".join("---" for _ in table.columns) + "|"
+    rows = ["| " + " | ".join(map(str, row)) + " |" for row in table.itertuples(index=False)]
+    return "\n".join([header, divider, *rows])
+
+
+def build_summary(log: pd.DataFrame, photos: pd.DataFrame, issues: pd.DataFrame, splits: pd.DataFrame) -> str:
+    """Laporan ringkas dataset dalam Markdown."""
+    downloads = "\n".join(f"- {status}: {count}" for status, count in photos["download_status"].value_counts().items())
+    if issues.empty:
+        validation = "Tidak ada masalah."
+    else:
+        validation = (
+            f"{len(issues)} masalah. Objek berikut tidak dimasukkan ke split sampai diperbaiki.\n\n"
+            + markdown_table(issues)
+        )
+    return f"""# Ringkasan Dataset
+
+Isian Form terakhir: {log["submitted_at"].max():%Y-%m-%d %H:%M}
+
+## Jumlah
+
+- Isian Form: {len(log)}
+- Objek: {photos["object_id"].nunique()}
+- Foto: {len(photos)}
+
+## Unduhan
+
+{downloads}
+
+## Validasi
+
+{validation}
+
+## Split per kelas (objek)
+
+{markdown_table(split_table(splits))}
+"""
 
 
 def main() -> None:
@@ -52,19 +99,20 @@ def main() -> None:
     history = existing[~existing["object_id"].isin(splits["object_id"])]
     metadata = photos.merge(splits[["object_id", "split"]], on="object_id", how="left")[METADATA_COLUMNS]
 
-    VALIDATION_CSV.parent.mkdir(parents=True, exist_ok=True)
+    DATASET_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
     pd.concat([splits, history]).sort_values("object_id").to_csv(OBJECT_SPLITS_CSV, index=False)
     metadata.to_csv(METADATA_CSV, index=False)
-    issues.to_csv(VALIDATION_CSV, index=False)
+    DATASET_SUMMARY.write_text(build_summary(log, photos, issues, splits), encoding="utf-8")
 
     print(f"isian: {len(log)} | objek: {photos['object_id'].nunique()} | foto: {len(photos)}")
     print("unduhan:", photos["download_status"].value_counts().to_dict())
-    print(f"validasi: {len(issues)} masalah, lihat {VALIDATION_CSV.relative_to(ROOT).as_posix()}")
+    print(f"validasi: {len(issues)} masalah")
     if problem_ids:
         print("objek tidak dimasukkan ke split:", sorted(problem_ids))
     print("\nsplit per kelas (objek):")
-    print(pd.crosstab(splits["label"], splits["split"], margins=True, margins_name="total"))
-    print(f"\ndisimpan: {METADATA_CSV.relative_to(ROOT).as_posix()}, {OBJECT_SPLITS_CSV.relative_to(ROOT).as_posix()}")
+    print(split_table(splits).to_string(index=False))
+    saved = [METADATA_CSV, OBJECT_SPLITS_CSV, DATASET_SUMMARY]
+    print("\ndisimpan:", ", ".join(path.relative_to(ROOT).as_posix() for path in saved))
 
 
 if __name__ == "__main__":

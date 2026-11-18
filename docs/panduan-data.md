@@ -43,10 +43,10 @@ data/
   raw/<label>/<object_id>/<object_id>-miring.jpg
   metadata.csv
   object_splits.csv
-reports/dataset/validation.csv
+reports/dataset/summary.md
 ```
 
-`validation.csv` berisi daftar masalah pada isian Form atau unduhan. Kalau tabelnya kosong, semua data lolos pemeriksaan.
+`summary.md` berisi ringkasan dataset: jumlah isian, objek, dan foto, status unduhan, hasil pemeriksaan, serta jumlah objek per split. Kalau ada masalah pada isian Form atau unduhan, daftarnya tercantum di bagian Validasi dan objek tersebut tidak dimasukkan ke split sampai diperbaiki. Foto yang gagal diunduh dicoba ulang otomatis sampai tiga kali, dan perintah yang sama bisa dijalankan lagi untuk mencoba sisanya.
 
 ## metadata.csv
 

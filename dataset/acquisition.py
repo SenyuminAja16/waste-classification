@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 from PIL import Image
 
-from core.config import FOTO_DIR, ROOT, CLASSES
+from core.config import CLASSES, PHOTO_CACHE_DIR, ROOT
 
 # Kolom sheet dibaca berdasarkan POSISI (ada nama kolom ganda: Sub-tipe x3, Masukkan Foto x2).
 KOLOM = ["timestamp", "id_atas", "id_miring", "anggota", "sesi", "tanggal", "kelas", "sub1", "sub2", "sub3",
@@ -53,12 +53,12 @@ def tabel_foto(sumber) -> pd.DataFrame:
 
 
 def unduh(fid: str):
-    """Unduh satu foto dari Drive ke cache/foto/<id>.jpg. None bila gagal."""
-    p = FOTO_DIR / f"{fid}.jpg"
+    """Unduh satu foto dari Drive ke cache/photos/<id>.jpg. None bila gagal."""
+    p = PHOTO_CACHE_DIR / f"{fid}.jpg"
     if not p.exists():
         try:
             import gdown
-            FOTO_DIR.mkdir(parents=True, exist_ok=True)
+            PHOTO_CACHE_DIR.mkdir(parents=True, exist_ok=True)
             gdown.download(f"https://drive.google.com/uc?id={fid}", str(p), quiet=True)
         except Exception:
             return None

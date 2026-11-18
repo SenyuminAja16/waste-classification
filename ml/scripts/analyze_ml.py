@@ -1,6 +1,6 @@
 """Analisis lengkap bagian ML untuk laporan / PPT progress.
 
-Jalankan SETELAH ml/scripts/train_ml.py. Menghasilkan di results/analysis/:
+Jalankan SETELAH ml/scripts/train_ml.py. Menghasilkan di reports/analysis/:
   summary.md              tabel siap tempel: CV mean±std, metrik, ΔF1, ablation, pasangan error, efisiensi
   cv_models.csv           F1 macro (mean±std) tiap model, tiap skenario
   ablation_fitur.csv      kontribusi grup fitur (warna / tekstur / bentuk)
@@ -36,7 +36,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict, cross_val_score
 from sklearn.preprocessing import StandardScaler
 
-from core.config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
+from core.config import CLASSES, MODELS_DIR, REPORTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
 from core.image import load_image, resize_43
 from ml import features as F
 from ml.features import build_features
@@ -45,7 +45,7 @@ from pcd.pipeline import run_pcd
 
 ML_SCENARIO = {"pcd": 1, "raw": 2}
 LABEL = {"pcd": "PCD+ML", "raw": "Raw+ML"}
-OUT = RESULTS_DIR / "analysis"
+OUT = REPORTS_DIR / "analysis"
 
 
 def md_table(headers, rows):
@@ -192,7 +192,7 @@ def main():
     tags = ["pcd", "raw"] if a.scenario == "both" else [a.scenario]
     metas, cv_rows, abl_rows, best_cv, timings, err_info = {}, [], [], {}, [], {}
     for tag in tags:
-        mp = RESULTS_DIR / f"ml_{tag}.json"
+        mp = REPORTS_DIR / f"ml_{tag}.json"
         model_file = MODELS_DIR / SCENARIOS[ML_SCENARIO[tag]].file
         if not mp.exists() or not model_file.exists():
             print(f"[{tag}] dilewati: jalankan dulu python -m ml.scripts.train_ml"); continue

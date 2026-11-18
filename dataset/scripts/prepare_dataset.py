@@ -1,12 +1,12 @@
 """Baca sheet log_akuisisi, unduh foto dari Drive, dan buat data/splits/split.csv (dibagi PER OBJEK).
 
 Pemakaian:
-    python -m dataset.scripts.prepare_dataset                       # baca Google Sheet (lihat config.SUMBER_LOG)
+    python -m dataset.scripts.prepare_dataset                       # baca Google Sheet (lihat config.LOG_SOURCES)
     python -m dataset.scripts.prepare_dataset --sumber log.csv      # atau dari CSV hasil download sheet
     python -m dataset.scripts.prepare_dataset --sumber a.csv b.csv  # gabungan beberapa sumber
 
 Pembagian: train / val / test = 70 / 15 / 15 per objek, seimbang per kelas.
-Kalau ada kelas dengan objek < config.MIN_OBJEK_SPLIT, semua data jadi 'train'
+Kalau ada kelas dengan objek < config.MIN_OBJECTS_FOR_SPLIT, semua data jadi 'train'
 (train_ml.py lalu hanya memakai cross-validation).
 """
 import argparse
@@ -15,7 +15,7 @@ import random
 import sys
 from pathlib import Path
 
-from core.config import CLASSES, MIN_OBJEK_SPLIT, ROOT, SEED, SPLIT_CSV, SUMBER_LOG, TEST_FRAC, VAL_FRAC
+from core.config import CLASSES, LOG_SOURCES, MIN_OBJECTS_FOR_SPLIT, ROOT, SEED, SPLIT_CSV, TEST_FRAC, VAL_FRAC
 from dataset.acquisition import muat_tabel_foto
 
 
@@ -29,14 +29,17 @@ def bagi(ids, rng):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--sumber", nargs="*", default=None, help="URL atau path CSV sheet (default: config.SUMBER_LOG)")
+    ap.add_argument("--sumber", nargs="*", default=None, help="URL atau path CSV sheet (default: config.LOG_SOURCES)")
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--out", type=Path, default=SPLIT_CSV)
     a = ap.parse_args()
 
-    df = muat_tabel_foto(a.sumber or SUMBER_LOG)
+    sources = a.sumber or LOG_SOURCES
+    if not sources:
+        sys.exit("WASTE_SHEET_ID belum diatur (lihat .env.example)")
+    df = muat_tabel_foto(sources)
     n_obj = df.groupby("kelas").id_objek.nunique().reindex(CLASSES).fillna(0).astype(int)
-    if n_obj.min() >= MIN_OBJEK_SPLIT:
+    if n_obj.min() >= MIN_OBJECTS_FOR_SPLIT:
         rng = random.Random(a.seed)
         sub = {}
         for k in CLASSES:
@@ -44,7 +47,7 @@ def main():
         df["subset"] = df["id_objek"].map(sub)
     else:
         df["subset"] = "train"
-        print(f"\nCATATAN: objek per kelas baru {n_obj.to_dict()} (minimal {MIN_OBJEK_SPLIT} per kelas untuk split). "
+        print(f"\nCATATAN: objek per kelas baru {n_obj.to_dict()} (minimal {MIN_OBJECTS_FOR_SPLIT} per kelas untuk split). "
               "Semua data dijadikan 'train'; training hanya memakai cross-validation.")
 
     a.out.parent.mkdir(parents=True, exist_ok=True)

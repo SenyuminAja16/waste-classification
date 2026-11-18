@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import f1_score
 
-from core.config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
+from core.config import CLASSES, MODELS_DIR, REPORTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
 from core.evaluate import evaluate, print_metrics, save_report
 from core.image import load_image, resize_43
 from dl import models as dl
@@ -149,8 +149,8 @@ def main():
     torch.save(best["state"], out)
     print(f"[{a.scenario}] model disimpan: {out}")
     save_report(f"dl_{a.scenario}", m, {"best_epoch": best["epoch"], "val_f1": best["f1"], "args": vars(a) | {"split": str(a.split)}})
-    RESULTS_DIR.mkdir(exist_ok=True)
-    (RESULTS_DIR / f"dl_{a.scenario}_history.json").write_text(json.dumps(history, indent=2))
+    REPORTS_DIR.mkdir(exist_ok=True)
+    (REPORTS_DIR / f"dl_{a.scenario}_history.json").write_text(json.dumps(history, indent=2))
 
 
 if __name__ == "__main__":

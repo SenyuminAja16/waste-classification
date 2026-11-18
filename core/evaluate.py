@@ -1,4 +1,4 @@
-"""Metrik evaluasi: accuracy, precision, recall, F1 (macro), confusion matrix."""
+"""Metrik evaluasi dan confusion matrix yang dipakai ML dan DL."""
 import json
 
 import matplotlib
@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
 
-from core.config import CLASSES, RESULTS_DIR
+from core.config import CLASSES, REPORTS_DIR
 
 
 def evaluate(y_true, y_pred) -> dict:
@@ -25,9 +25,9 @@ def evaluate(y_true, y_pred) -> dict:
 
 
 def save_report(name: str, metrics: dict, extra: dict | None = None):
-    RESULTS_DIR.mkdir(exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     out = dict(metrics, **(extra or {}))
-    (RESULTS_DIR / f"{name}.json").write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
+    (REPORTS_DIR / f"{name}.json").write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
 
     cm = np.array(metrics["confusion_matrix"])
     fig, ax = plt.subplots(figsize=(4, 3.6))
@@ -42,7 +42,7 @@ def save_report(name: str, metrics: dict, extra: dict | None = None):
             ax.text(j, i, cm[i, j], ha="center", va="center",
                     color="white" if cm[i, j] > cm.max() / 2 else "black")
     fig.tight_layout()
-    fig.savefig(RESULTS_DIR / f"{name}_cm.png", dpi=150)
+    fig.savefig(REPORTS_DIR / f"{name}_cm.png", dpi=150)
     plt.close(fig)
 
 

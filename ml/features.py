@@ -21,7 +21,7 @@ Setelah isi file ini diubah, latih ulang: python -m ml.scripts.train_ml --refres
 import numpy as np
 import pandas as pd
 
-from core.config import PROCESSED_DIR, ROOT
+from core.config import FEATURES_CACHE_DIR, ROOT
 from core.image import load_image, resize_43
 from pcd.pipeline import run_pcd
 
@@ -32,8 +32,8 @@ def extract_features(img_bgr, mask=None):
 
 def build_features(df: pd.DataFrame, tag: str, refresh: bool = False) -> np.ndarray:
     """Matriks fitur (n_foto x n_fitur). tag 'pcd': resize → PCD → fitur. tag 'raw': resize → fitur.
-    Di-cache di data/processed/. Pakai refresh=True kalau PCD / fitur diubah."""
-    cache = PROCESSED_DIR / f"features_{tag}.npz"
+    Di-cache di cache/features/. Pakai refresh=True kalau PCD / fitur diubah."""
+    cache = FEATURES_CACHE_DIR / f"features_{tag}.npz"
     paths = df.path.to_numpy()
     if cache.exists() and not refresh:
         z = np.load(cache, allow_pickle=True)
@@ -52,6 +52,6 @@ def build_features(df: pd.DataFrame, tag: str, refresh: bool = False) -> np.ndar
             print(f"[{tag}] ekstraksi fitur {i}/{len(paths)}", end="\r")
     print()
     X = np.stack(feats)
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    FEATURES_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     np.savez(cache, X=X, paths=paths)
     return X

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+# data besar: simpan di Drive, bukan di git
+data/raw/*/*
+!data/raw/*/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+# model hasil training
+models/*.joblib
+models/*.pt
+results/*
+!results/.gitkeep

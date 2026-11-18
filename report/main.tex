@@ -1,0 +1,239 @@
+\documentclass[10pt,twocolumn,a4paper]{article}
+\usepackage[margin=1.7cm,columnsep=0.65cm]{geometry}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{siunitx}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{cite}
+
+\definecolor{notegray}{RGB}{90,90,90}
+\newcommand{\isian}[1]{\textcolor{notegray}{\textit{[Isi: #1]}}}
+\newcommand{\projecttitle}{Judul Final Project Pengolahan Citra Digital dan Visi Komputer}
+
+\renewcommand{\projecttitle}{Klasifikasi Sampah Anorganik (Plastik, Kertas, dan Kardus) Berbasis Pengolahan Citra Digital dan Visi Komputer pada Dataset Primer}
+\title{\bfseries \projecttitle}
+\author{
+Mafaza$^{1}$, Farhan$^{1}$, Jefri$^{1}$\\[-1mm]
+\small $^{1}$\isian{Program Studi}, Fakultas Ilmu Komputer, Universitas Brawijaya\\
+\small Email: \isian{email Mafaza}, \isian{email Farhan}, \isian{email Jefri}
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Pemilahan sampah di sumbernya masih sulit dilakukan secara konsisten karena jenis sampah anorganik yang umum, yaitu plastik, kertas, dan kardus, sering tampak mirip dan berada pada kondisi yang beragam. Proposal ini merancang sistem klasifikasi tiga kelas sampah anorganik berbasis citra. Dataset primer dikumpulkan sendiri oleh ketiga anggota kelompok dengan target 50 objek per kelas, masing-masing difoto dua kali (tampak atas dan miring sekitar $45^{\circ}$), sehingga totalnya sekitar 300 foto. Variasi latar, pencahayaan, dan kondisi objek dijaga melalui protokol akuisisi tertulis dan log akuisisi per objek. Pipeline pengolahan citra digital (PCD) yang direncanakan mencakup normalisasi ukuran, konversi ruang warna, peningkatan kontras CLAHE, penyaringan derau, dan segmentasi objek. Tiga skenario dibandingkan: PCD dengan fitur handcrafted dan Machine Learning (SVM dan Random Forest), citra mentah dengan Deep Learning, serta PCD dengan Deep Learning berbasis transfer learning. Evaluasi menggunakan accuracy, precision, recall, F1-score, dan confusion matrix, disertai analisis error. Pembagian data dilakukan per objek untuk mencegah kebocoran data. Pada tahap proposal ini belum ada hasil eksperimen; dokumen ini menyajikan desain data, pipeline, dan rencana evaluasi yang akan dijalankan pada tahap berikutnya.
+\end{abstract}
+
+\noindent\textbf{Keywords:} image processing, computer vision, waste classification, machine learning, deep learning, primary dataset.
+
+\section{Pendahuluan}
+Pengelolaan sampah yang baik dimulai dari pemilahan. Plastik, kertas, dan kardus adalah jenis sampah anorganik yang paling sering dijumpai sehari-hari, dan masing-masing memiliki jalur daur ulang yang berbeda. Pemilahan manual bergantung pada kedisiplinan dan pengetahuan pelaku, sehingga hasilnya tidak konsisten. Sistem yang dapat mengenali jenis sampah dari foto berpotensi membantu pemilahan, misalnya pada tempat sampah pintar atau aplikasi edukasi. Pengolahan citra digital dan visi komputer diperlukan karena perbedaan ketiga kelas ini bersifat visual: tekstur permukaan, warna, kilap, dan bentuk lipatan.
+
+Klasifikasi sampah berbasis citra telah dipelajari melalui dataset seperti TrashNet \cite{yang2016trashnet} dan pendekatan transfer learning dengan arsitektur ringan seperti MobileNetV2 \cite{sandler2018mobilenetv2}. Pada sisi klasik, fitur tekstur dan bentuk seperti GLCM \cite{haralick1973}, LBP \cite{ojala2002}, dan HOG \cite{dalal2005} umum dipakai bersama pengklasifikasi seperti SVM \cite{cortes1995} dan Random Forest \cite{breiman2001}. Namun dataset publik umumnya difoto pada latar yang seragam dan tidak mencerminkan kondisi sampah sehari-hari yang kotor, lecek, dan berada di latar ramai. Selain itu, perbandingan yang adil antara pendekatan klasik dan Deep Learning, serta dampak PCD terhadap keduanya, perlu diuji pada data yang kondisinya terkontrol dan terdokumentasi. Hal ini yang mendasari pengumpulan dataset primer pada project ini.
+
+Tujuan project ini adalah membangun dan membandingkan sistem klasifikasi tiga kelas sampah anorganik. Kontribusi yang direncanakan: (1) dataset primer yang diambil sendiri dengan protokol dan log akuisisi yang terdokumentasi; (2) pipeline PCD untuk persiapan citra; (3) perbandingan PCD+ML, Raw+DL, dan PCD+DL; serta (4) evaluasi kuantitatif dan analisis error.
+
+\section{Data Primer dan Akuisisi Data}
+\subsection{Objek dan Lokasi Akuisisi}
+Objek penelitian adalah sampah anorganik dengan tiga kelas, yaitu \textbf{plastik}, \textbf{kertas}, dan \textbf{kardus}. Definisi kelas dibuat tegas agar label tidak ambigu (Tabel~\ref{tab:kelas}). Kelas plastik mencakup botol, gelas cup, wadah atau tutup, dan kresek. Kelas kertas mencakup HVS, koran, struk, dan kertas tipis lainnya. Kelas kardus dibatasi pada karton bergelombang (\textit{corrugated}); penentunya adalah lapisan bergelombang di dalamnya, bukan warna cokelatnya. Barang yang berada di luar definisi, misalnya styrofoam, tetrapak, karton duplex, dan sachet berlapis foil, tidak masuk dataset utama. Beberapa di antaranya dapat difoto sebagai himpunan \textit{hard set} opsional yang tidak dipakai untuk training, hanya untuk menganalisis perilaku model pada objek di luar definisi kelas.
+
+Pengambilan data dilakukan oleh seluruh anggota kelompok pada Oktober--November 2026 di lokasi yang dikategorikan sebagai kost/rumah, kampus, tempat umum, atau lainnya, dan dicatat per objek pada log akuisisi. \isian{Pastikan lokasi akuisisi memenuhi aturan dosen bahwa data diambil di dalam lingkungan Universitas Brawijaya. Jika panduan akuisisi yang membolehkan kost/rumah belum disetujui dosen, sesuaikan kalimat ini dan Pernyataan Dataset Primer di bawah.}
+
+\begin{table}[H]
+\centering
+\caption{Definisi kelas dan aturan kasus abu-abu.}
+\label{tab:kelas}
+\small
+\begin{tabularx}{\columnwidth}{lXX}
+\toprule
+Kelas & Masuk & Tidak masuk\\
+\midrule
+Plastik & Botol, gelas cup, wadah kaku, tutup, kresek & Sachet foil, styrofoam, sedotan\\
+Kertas & HVS, koran, struk, kertas cokelat tipis, amplop, tisu & Kertas berlapis plastik atau minyak, karton duplex\\
+Kardus & Karton bergelombang: kardus paket, kardus mi/air mineral & Kotak sereal/obat (duplex), tetrapak\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Aturan kasus abu-abu yang dipakai: label atau stiker tidak mengubah kelas; kardus harus bergelombang; objek yang meragukan tidak difoto; dan kertas yang memuat data pribadi tidak boleh diambil, atau bagian sensitifnya dilipat atau dikeluarkan dari frame.
+
+\subsection{Prosedur Akuisisi}
+Setiap objek fisik difoto dua kali dengan urutan tetap: (1) tegak lurus dari atas, dan (2) miring sekitar $45^{\circ}$. Objek berada di tengah frame, mengisi sekitar 50--70\% frame, tidak terpotong, dan hanya ada satu objek per foto tanpa sampah dari kelas lain. Satu objek berarti satu barang fisik; kardus yang dipotong-potong tetap dihitung satu objek.
+
+Kamera yang dipakai adalah kamera bawaan ponsel masing-masing anggota pada mode foto biasa, zoom $1\times$, rasio 4:3, resolusi default, format JPG. Mode Portrait, ultrawide, flash, filter, beauty, AI scene optimizer, dan tag lokasi dimatikan. Foto tidak boleh dikompres lewat aplikasi pesan, dan metadata EXIF dipertahankan karena dipakai untuk menentukan urutan foto atas dan miring.
+
+Variasi dijaga secara terencana. Sekitar 70\% objek difoto pada latar polos (lantai keramik, meja polos, kain satu warna), dan sekitar 30\% pada latar ramai (minimal 20\% per kelas), misalnya meja dengan benda lain, karpet bermotif, paving, atau rumput. Pencahayaan divariasikan antar objek (dekat jendela, lampu kamar, luar ruangan terang atau teduh), dengan flash mati dan menghindari \textit{backlight}. Kondisi objek dibiarkan apa adanya (bersih, kotor, penyok, lecek) dan kresek dibatasi maksimal 25\% dari objek plastik. Konsistensi dijaga oleh protokol yang sama untuk ketiga anggota, sedangkan variasi berasal dari latar, cahaya, kondisi, dan sub-tipe objek.
+
+Target dan kuota ditunjukkan pada Tabel~\ref{tab:kuota}. Kuota adalah target, bukan batas atas. Batasnya: setiap anggota minimal 13 objek per kelas, satu anggota maksimal 50\% dari objek satu kelas, dan kelas terbanyak maksimal $1{,}5\times$ kelas tersedikit. Semua anggota memotret ketiga kelas agar tidak ada kelas yang didominasi satu perangkat atau satu orang.
+
+\begin{table}[H]
+\centering
+\caption{Target objek per anggota dan kelas (masing-masing 2 foto per objek).}
+\label{tab:kuota}
+\begin{tabular}{lrrrr}
+\toprule
+Anggota & Plastik & Kertas & Kardus & Total\\
+\midrule
+Mafaza & 17 & 17 & 16 & 50\\
+Farhan & 17 & 16 & 17 & 50\\
+Jefri & 16 & 17 & 17 & 50\\
+\midrule
+Total & 50 & 50 & 50 & 150\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Penamaan dan pencatatan dibuat ketat. ID objek berformat \texttt{KELAS-ANGGOTA-NOMOR}, misalnya \texttt{PL-F-001}, dan setiap objek disimpan dalam satu folder berisi tepat dua foto dengan nama file asli. Setiap objek dicatat pada Google Form yang terhubung ke Google Sheet \texttt{log\_akuisisi} (kelas, sub-tipe, anggota, sesi, tanggal, lokasi, latar, cahaya, kondisi). Sebagai bukti akuisisi, 1--2 foto \textit{behind-the-scenes} diambil setiap sesi. Milestone pengumpulan adalah minimal 5 objek per kelas per anggota (sekitar 90 foto) pada 10 November 2026 dan seluruh target pada 17 November 2026.
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][3.0cm][c]{0.92\columnwidth}{\centering \isian{Contoh data primer awal: foto atas dan miring untuk tiap kelas}}}
+\caption{Contoh data primer awal (atas dan miring) untuk plastik, kertas, dan kardus.}
+\label{fig:sample}
+\end{figure}
+
+\subsection{Pelabelan dan Pembagian Data}
+Label kelas diberikan saat akuisisi dan tercermin pada ID objek serta folder, sehingga tidak ada proses pelabelan terpisah yang rawan salah. Kesesuaian label diperiksa dengan membandingkan log akuisisi dengan folder, serta pemeriksaan visual terhadap kasus abu-abu.
+
+Dataset dibagi \textbf{per objek}, bukan per foto: kedua foto dari satu objek selalu berada pada subset yang sama. Hal ini mencegah kebocoran data, karena foto atas dan miring dari barang yang sama sangat mirip. Rencana pembagian per kelas adalah 35 objek untuk train, 7 untuk validation, dan 8 untuk test (Tabel~\ref{tab:dataset}), dengan stratifikasi berdasarkan kelas dan, bila memungkinkan, berdasarkan anggota, latar, dan sub-tipe. Angka pada tabel menyesuaikan jumlah objek akhir.
+
+\begin{table}[H]
+\centering
+\caption{Rencana ringkasan dataset primer, objek (foto).}
+\label{tab:dataset}
+\begin{tabular}{lrrr}
+\toprule
+Kelas & Train & Validation & Test\\
+\midrule
+Plastik & 35 (70) & 7 (14) & 8 (16)\\
+Kertas & 35 (70) & 7 (14) & 8 (16)\\
+Kardus & 35 (70) & 7 (14) & 8 (16)\\
+\midrule
+Total & 105 (210) & 21 (42) & 24 (48)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Dengan sekitar 300 foto, dataset ini kecil. Karena itu transfer learning, augmentasi pada data training saja, dan validasi silang pada tahap ML dipertimbangkan untuk mengurangi variansi hasil. Test set tidak dipakai untuk memilih parameter.
+
+\section{Metodologi}
+\subsection{Gambaran Umum Sistem}
+Pipeline sistem terdiri dari akuisisi data primer, PCD, ekstraksi fitur atau ROI, klasifikasi dengan ML atau DL, evaluasi, dan demo (Gambar~\ref{fig:pipeline}).
+
+\begin{figure}[H]
+\centering
+\fbox{\parbox[c][3.0cm][c]{0.92\columnwidth}{\centering \isian{Diagram: Data primer $\rightarrow$ PCD $\rightarrow$ fitur/ROI $\rightarrow$ ML/DL $\rightarrow$ evaluasi $\rightarrow$ demo}}}
+\caption{Pipeline keseluruhan sistem.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Pengolahan Citra Digital}
+Tahapan PCD yang direncanakan dipilih berdasarkan masalah yang ditemukan pada data, dan akan dipertahankan hanya bila terbukti bermanfaat lewat ablation. Pertama, citra diubah ukurannya ke resolusi seragam dengan menjaga rasio 4:3. Kedua, citra dikonversi ke ruang warna HSV dan LAB; HSV memisahkan rona dan saturasi (membantu membedakan plastik berwarna, kertas putih, dan kardus cokelat), sedangkan kanal L pada LAB dipakai untuk kontras. Ketiga, CLAHE \cite{pizer1987} diterapkan pada kanal L untuk menaikkan kontras tekstur pada foto yang terlalu terang atau gelap. Keempat, penyaringan derau (Gaussian atau median) dipakai untuk mengurangi derau sensor tanpa menghilangkan tekstur penting. Kelima, segmentasi objek dengan ambang Otsu \cite{otsu1979} atau adaptive threshold, dilanjutkan operasi morfologi, untuk memisahkan objek dari latar. Karena sekitar 30\% data memiliki latar ramai, kualitas segmentasi pada latar tersebut akan dinilai secara khusus.
+
+Koreksi gamma dapat dipakai untuk menyesuaikan pencahayaan:
+\begin{equation}
+ s = 255\left(\frac{r}{255}\right)^{\gamma},
+ \label{eq:gamma}
+\end{equation}
+dengan $r$ intensitas piksel masukan, $s$ intensitas keluaran, dan $\gamma$ parameter koreksi. Nilai $\gamma<1$ mencerahkan citra dan $\gamma>1$ menggelapkannya. Penggunaannya bergantung pada hasil eksplorasi data.
+
+\subsection{Ekstraksi Fitur dan Machine Learning}
+Fitur handcrafted yang direncanakan adalah histogram warna HSV (rona dan saturasi), fitur tekstur GLCM \cite{haralick1973} dan LBP \cite{ojala2002} untuk membedakan permukaan halus plastik, serat kertas, dan lapisan bergelombang kardus, serta fitur bentuk dari kontur hasil segmentasi (rasio luas terhadap bounding box dan Hu Moments). HOG \cite{dalal2005} dapat ditambahkan bila bermanfaat. Dua pengklasifikasi klasik dibandingkan, yaitu SVM \cite{cortes1995} (kernel RBF dan linear) dan Random Forest \cite{breiman2001}. Fitur dinormalisasi, dan hyperparameter utama (misalnya $C$, $\gamma$ untuk SVM; jumlah pohon dan kedalaman untuk Random Forest) dicari dengan \textit{grid search} pada data training dengan validasi silang yang tetap per objek.
+
+\subsection{Deep Learning / Computer Vision}
+Model DL yang direncanakan adalah CNN berbasis transfer learning, yaitu MobileNetV2 \cite{sandler2018mobilenetv2} yang telah dilatih pada ImageNet, dengan lapisan klasifikasi diganti menjadi tiga kelas. Alasannya, model ini ringan, cocok untuk dataset kecil, dan mudah dipakai pada demo. Input berupa citra yang diubah ukurannya ke $224\times224$. Strategi pelatihan: lapisan klasifikasi dilatih lebih dulu, kemudian sebagian lapisan atas di-\textit{fine-tune} dengan laju belajar kecil. Augmentasi ringan (flip, rotasi kecil, perubahan kecerahan) hanya diterapkan pada data training. Output model adalah probabilitas tiga kelas. \isian{Tentukan hyperparameter akhir: optimizer, learning rate, batch size, jumlah epoch.}
+
+\subsection{Skenario Eksperimen}
+Tiga eksperimen minimum yang dibandingkan adalah:
+\begin{enumerate}[leftmargin=*]
+    \item \textbf{PCD + Handcrafted Features + Machine Learning};
+    \item \textbf{Raw Image + Deep Learning};
+    \item \textbf{PCD + Deep Learning}.
+\end{enumerate}
+Ketiganya memakai pembagian data yang identik. Bila waktu memungkinkan, ablation dilakukan secara bertahap (Raw $\rightarrow$ +CLAHE $\rightarrow$ +Filtering $\rightarrow$ +Segmentasi) untuk mengetahui kontribusi tiap tahap PCD. Evaluasi menggunakan accuracy, precision, recall, F1-score (macro), dan confusion matrix. Karena jumlah data kecil, hasil dilaporkan beserta variasinya pada beberapa \textit{random seed} bila memungkinkan.
+
+\section{Rencana Hasil dan Pembahasan}
+Bagian ini adalah rencana analisis. Belum ada hasil eksperimen pada tahap proposal, sehingga tabel di bawah masih kosong dan akan diisi pada tahap berikutnya.
+
+\subsection{Hasil Pengolahan Citra}
+Akan ditampilkan contoh citra sebelum dan sesudah tiap tahap PCD (Raw, CLAHE, filtering, segmentasi) untuk setiap kelas, termasuk kasus latar ramai dan pencahayaan ekstrem, disertai penjelasan perubahan yang terjadi dan kaitannya dengan kebutuhan fitur atau model.
+
+\subsection{Hasil Machine Learning dan Deep Learning}
+\begin{table}[H]
+\centering
+\caption{Perbandingan hasil eksperimen utama (diisi pada tahap berikutnya).}
+\label{tab:result}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Metode & Accuracy & Precision & Recall & F1\\
+\midrule
+PCD + SVM & -- & -- & -- & --\\
+PCD + Random Forest & -- & -- & -- & --\\
+Raw + DL & -- & -- & -- & --\\
+PCD + DL & -- & -- & -- & --\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subsection{Analisis Pengaruh PCD}
+Dampak PCD diukur dengan selisih F1-score antara model dengan dan tanpa PCD:
+\begin{equation}
+\Delta F1 = F1_{\mathrm{PCD+Model}} - F1_{\mathrm{Raw+Model}}.
+\end{equation}
+Nilai positif berarti PCD membantu, dan nilai negatif berarti PCD justru menurunkan performa. Penyebabnya akan dianalisis dari karakteristik data, misalnya segmentasi yang gagal pada latar ramai atau hilangnya tekstur akibat penyaringan.
+
+\subsection{Analisis Keberhasilan dan Kegagalan}
+Akan ditampilkan contoh prediksi benar dan salah dari masing-masing metode. Sumber error yang diantisipasi adalah kemiripan antarkelas (kertas tebal dengan kardus tipis, plastik transparan dengan latar), kertas yang diremas, kardus basah atau berwarna, pencahayaan, blur, dan latar ramai. Himpunan \textit{hard set} (jika ada) dipakai untuk melihat bagaimana model memprediksi objek di luar definisi kelas.
+
+\subsection{Efisiensi dan Kelayakan Implementasi}
+Akan dilaporkan waktu inferensi per citra, ukuran model, dan kebutuhan komputasi untuk setiap pendekatan, untuk menilai kelayakan pemakaian pada demo dan perangkat sederhana.
+
+\section{Demo / Prototipe Sistem}
+Demo final direncanakan berupa aplikasi sederhana. Pengguna mengunggah atau memotret satu objek sampah, sistem menjalankan pipeline PCD dan model terbaik, lalu menampilkan kelas prediksi (plastik, kertas, atau kardus) beserta tingkat keyakinannya. \isian{Tentukan bentuk antarmuka (misalnya Streamlit/Gradio/desktop) dan cara menjalankannya.}
+
+\section{Pembagian Kontribusi Anggota}
+\begin{table}[H]
+\centering
+\caption{Kontribusi anggota kelompok.}
+\label{tab:contribution}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{p{2.4cm}p{5.2cm}}
+\toprule
+Anggota & Kontribusi Utama\\
+\midrule
+Mafaza & Akuisisi data, EDA, dan Pengolahan Citra Digital. \isian{sesuaikan peran}\\
+Farhan & Akuisisi data, ekstraksi fitur, Machine Learning, dan evaluasi ML. \isian{sesuaikan peran}\\
+Jefri & Akuisisi data, Deep Learning/Computer Vision, integrasi, dan demo. \isian{sesuaikan peran}\\
+\bottomrule
+\end{tabular}}
+\end{table}
+Akuisisi data adalah tanggung jawab bersama: masing-masing anggota memotret sekitar 50 objek dari ketiga kelas. Seluruh anggota wajib memahami keseluruhan pipeline.
+
+\section{Kesimpulan}
+Proposal ini mengusulkan klasifikasi tiga kelas sampah anorganik (plastik, kertas, kardus) dengan dataset primer sekitar 300 foto dari 150 objek, yang diambil dengan protokol terstandar dan dibagi per objek untuk mencegah kebocoran data. Tiga skenario, yaitu PCD+ML, Raw+DL, dan PCD+DL, akan dibandingkan dengan evaluasi kuantitatif dan analisis error. Keterbatasan yang sudah terlihat adalah ukuran dataset yang kecil dan variasi lokasi yang terbatas. Pada tahap berikutnya dataset diselesaikan, pipeline PCD dan baseline ML dibangun, dan eksperimen DL dijalankan.
+
+\section*{Pernyataan Dataset Primer}
+Kami menyatakan bahwa dataset utama pada project ini merupakan \textbf{data primer yang dikumpulkan sendiri oleh kelompok}. \isian{Ringkasan lokasi dan periode akuisisi: Oktober--November 2026; lokasi sesuai persetujuan dosen terkait lingkungan Universitas Brawijaya.} Foto tidak memuat wajah, orang, plat nomor, maupun data pribadi.
+
+\section*{Ketersediaan Kode dan Data}
+\isian{Tautan repository/folder pengumpulan yang ditentukan dosen.}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

@@ -1,6 +1,6 @@
 """Analisis lengkap bagian ML untuk laporan / PPT progress.
 
-Jalankan SETELAH scripts/train_ml.py. Menghasilkan di results/analysis/:
+Jalankan SETELAH ml/scripts/train_ml.py. Menghasilkan di results/analysis/:
   summary.md              tabel siap tempel: CV mean±std, metrik, ΔF1, ablation, pasangan error, efisiensi
   cv_models.csv           F1 macro (mean±std) tiap model, tiap skenario
   ablation_fitur.csv      kontribusi grup fitur (warna / tekstur / bentuk)
@@ -13,8 +13,8 @@ Jalankan SETELAH scripts/train_ml.py. Menghasilkan di results/analysis/:
 CV memakai train+val (TIDAK menyentuh test), dibagi per objek, diulang beberapa seed.
 
 Pemakaian:
-    python scripts/analyze_ml.py
-    python scripts/analyze_ml.py --scenario pcd --seeds 5
+    python -m ml.scripts.analyze_ml
+    python -m ml.scripts.analyze_ml --scenario pcd --seeds 5
 """
 import argparse
 import itertools
@@ -23,8 +23,6 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import cv2
 import joblib
@@ -38,12 +36,12 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict, cross_val_score
 from sklearn.preprocessing import StandardScaler
 
-from config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
-from src import features as F
-from src.dataset import build_features
-from src.ml import candidates
-from src.pcd import run_pcd
-from src.utils import load_image, resize_43
+from core.config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
+from core.image import load_image, resize_43
+from ml import features as F
+from ml.features import build_features
+from ml.models import candidates
+from pcd.pipeline import run_pcd
 
 ML_SCENARIO = {"pcd": 1, "raw": 2}
 LABEL = {"pcd": "PCD+ML", "raw": "Raw+ML"}
@@ -180,7 +178,7 @@ def main():
     a = ap.parse_args()
     err_subsets = ["val", "test"] if a.include_test else ["val"]
     if not a.split.exists():
-        sys.exit(f"{a.split} belum ada. Jalankan dulu: python scripts/prepare_dataset.py")
+        sys.exit(f"{a.split} belum ada. Jalankan dulu: python -m dataset.scripts.prepare_dataset")
     OUT.mkdir(parents=True, exist_ok=True)
     df = pd.read_csv(a.split)
     y = df.kelas.map(CLASSES.index).to_numpy()
@@ -197,10 +195,10 @@ def main():
         mp = RESULTS_DIR / f"ml_{tag}.json"
         model_file = MODELS_DIR / SCENARIOS[ML_SCENARIO[tag]].file
         if not mp.exists() or not model_file.exists():
-            print(f"[{tag}] dilewati: jalankan dulu scripts/train_ml.py"); continue
+            print(f"[{tag}] dilewati: jalankan dulu python -m ml.scripts.train_ml"); continue
         meta = json.loads(mp.read_text())
         if "candidates" not in meta:
-            print(f"[{tag}] dilewati: hasil train_ml lama, jalankan ulang scripts/train_ml.py"); continue
+            print(f"[{tag}] dilewati: hasil train_ml lama, jalankan ulang python -m ml.scripts.train_ml"); continue
         metas[tag] = meta
         X = build_features(df, tag, a.refresh)
         model = joblib.load(model_file)
@@ -222,7 +220,7 @@ def main():
                                  "f1_mean": m, "f1_std": s})
             plot_hsv(tag, X, y)
         else:
-            print(f"[{tag}] FEATURE_GROUPS/COLOR_BINS tidak ada di src/features.py → ablation & plot HSV dilewati")
+            print(f"[{tag}] FEATURE_GROUPS/COLOR_BINS tidak ada di ml/features.py → ablation & plot HSV dilewati")
         plot_pca(tag, X, y)
 
         err_info[tag] = error_analysis(tag, df, X, y, g, model, err_subsets, N_SPLIT_ERR)

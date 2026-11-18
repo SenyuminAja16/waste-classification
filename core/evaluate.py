@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
 
-from config import CLASSES, RESULTS_DIR
+from core.config import CLASSES, RESULTS_DIR
 
 
 def evaluate(y_true, y_pred) -> dict:

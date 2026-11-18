@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 from PIL import Image
 
-from config import FOTO_DIR, ROOT, CLASSES
+from core.config import FOTO_DIR, ROOT, CLASSES
 
 # Kolom sheet dibaca berdasarkan POSISI (ada nama kolom ganda: Sub-tipe x3, Masukkan Foto x2).
 KOLOM = ["timestamp", "id_atas", "id_miring", "anggota", "sesi", "tanggal", "kelas", "sub1", "sub2", "sub3",

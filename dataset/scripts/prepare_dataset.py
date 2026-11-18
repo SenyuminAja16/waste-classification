@@ -1,9 +1,9 @@
 """Baca sheet log_akuisisi, unduh foto dari Drive, dan buat data/splits/split.csv (dibagi PER OBJEK).
 
 Pemakaian:
-    python scripts/prepare_dataset.py                       # baca Google Sheet (lihat config.SUMBER_LOG)
-    python scripts/prepare_dataset.py --sumber log.csv      # atau dari CSV hasil download sheet
-    python scripts/prepare_dataset.py --sumber a.csv b.csv  # gabungan beberapa sumber
+    python -m dataset.scripts.prepare_dataset                       # baca Google Sheet (lihat config.SUMBER_LOG)
+    python -m dataset.scripts.prepare_dataset --sumber log.csv      # atau dari CSV hasil download sheet
+    python -m dataset.scripts.prepare_dataset --sumber a.csv b.csv  # gabungan beberapa sumber
 
 Pembagian: train / val / test = 70 / 15 / 15 per objek, seimbang per kelas.
 Kalau ada kelas dengan objek < config.MIN_OBJEK_SPLIT, semua data jadi 'train'
@@ -15,10 +15,8 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from config import CLASSES, MIN_OBJEK_SPLIT, ROOT, SEED, SPLIT_CSV, SUMBER_LOG, TEST_FRAC, VAL_FRAC
-from src.dataset import muat_tabel_foto
+from core.config import CLASSES, MIN_OBJEK_SPLIT, ROOT, SEED, SPLIT_CSV, SUMBER_LOG, TEST_FRAC, VAL_FRAC
+from dataset.acquisition import muat_tabel_foto
 
 
 def bagi(ids, rng):

@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
 PROCESSED_DIR = DATA_DIR / "processed"

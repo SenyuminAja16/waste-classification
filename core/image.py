@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageOps
 
-from config import SIZE_LANDSCAPE
+from core.config import SIZE_LANDSCAPE
 
 
 def load_image(file) -> np.ndarray:

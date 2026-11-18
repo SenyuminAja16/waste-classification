@@ -6,16 +6,14 @@ Alur: ekstraksi fitur (di-cache) → grid search + cross-validation per objek pa
   - Data masih sedikit (tanpa val/test): model dipilih berdasarkan skor CV, metrik = prediksi out-of-fold.
 
 Pemakaian:
-    python scripts/train_ml.py                       # pcd dan raw
-    python scripts/train_ml.py --scenario pcd
-    python scripts/train_ml.py --refresh             # hitung ulang fitur (wajib bila PCD / fitur diubah)
-    python scripts/train_ml.py --eval-on val         # selama masih iterasi: JANGAN lihat skor test
+    python -m ml.scripts.train_ml                       # pcd dan raw
+    python -m ml.scripts.train_ml --scenario pcd
+    python -m ml.scripts.train_ml --refresh             # hitung ulang fitur (wajib bila PCD / fitur diubah)
+    python -m ml.scripts.train_ml --eval-on val         # selama masih iterasi: JANGAN lihat skor test
 """
 import argparse
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import joblib
 import numpy as np
@@ -23,10 +21,10 @@ import pandas as pd
 from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, cross_val_predict
 
-from config import CLASSES, MODELS_DIR, SCENARIOS, SEED, SPLIT_CSV
-from src.dataset import build_features
-from src.evaluate import evaluate, print_metrics, save_report
-from src.ml import candidates
+from core.config import CLASSES, MODELS_DIR, SCENARIOS, SEED, SPLIT_CSV
+from core.evaluate import evaluate, print_metrics, save_report
+from ml.features import build_features
+from ml.models import candidates
 
 ML_SCENARIO = {"pcd": 1, "raw": 2}
 
@@ -86,7 +84,7 @@ def main():
                     help="subset untuk laporan metrik. Pakai 'val' selama tuning agar test tetap bersih.")
     a = ap.parse_args()
     if not a.split.exists():
-        sys.exit(f"{a.split} belum ada. Jalankan dulu: python scripts/prepare_dataset.py")
+        sys.exit(f"{a.split} belum ada. Jalankan dulu: python -m dataset.scripts.prepare_dataset")
     df = pd.read_csv(a.split)
     try:
         for tag in (["pcd", "raw"] if a.scenario == "both" else [a.scenario]):

@@ -3,7 +3,10 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(ROOT / ".env")
 
 DATA_DIR = ROOT / "data"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"

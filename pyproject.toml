@@ -1,0 +1,39 @@
+[project]
+name = "waste-classification"
+version = "0.1.0"
+description = "Klasifikasi sampah plastik, kertas, dan kardus berbasis PCD dan visi komputer."
+requires-python = ">=3.11"
+dependencies = [
+    "gdown",
+    "joblib",
+    "matplotlib",
+    "numpy",
+    "opencv-python-headless",
+    "pandas",
+    "pillow",
+    "python-dotenv",
+    "scikit-image",
+    "scikit-learn>=1.3,<1.11",
+    "streamlit>=1.40",
+]
+
+[dependency-groups]
+dev = ["jupyterlab", "ruff"]
+dl = ["torch", "torchvision"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["core", "dataset", "pcd", "ml", "dl", "demo"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

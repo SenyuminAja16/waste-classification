@@ -9,10 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 
 DATA_DIR = ROOT / "data"
-SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
 RAW_DIR = DATA_DIR / "raw"
+METADATA_CSV = DATA_DIR / "metadata.csv"
+OBJECT_SPLITS_CSV = DATA_DIR / "object_splits.csv"
+SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
 FEATURES_CACHE_DIR = ROOT / "cache" / "features"
 REPORTS_DIR = ROOT / "reports"
+VALIDATION_CSV = REPORTS_DIR / "dataset" / "validation.csv"
 MODELS_DIR = Path(os.environ.get("WASTE_MODELS_DIR") or ROOT / "models")
 
 SHEET_ID = os.environ.get("WASTE_SHEET_ID", "")
@@ -33,7 +36,6 @@ DL_INPUT = 224
 SEED = 42
 VAL_FRAC = 0.15
 TEST_FRAC = 0.15
-MIN_OBJECTS_FOR_SPLIT = 10
 
 
 @dataclass(frozen=True)

@@ -42,9 +42,11 @@ data/
   raw/<label>/<object_id>/<object_id>-atas.jpg
   raw/<label>/<object_id>/<object_id>-miring.jpg
   metadata.csv
-  object_splits.csv
+dataset/object_splits.csv
 reports/dataset/summary.md
 ```
+
+Folder `data/` tidak masuk git. `object_splits.csv` dan `summary.md` masuk git supaya semua anggota memakai split yang sama.
 
 `summary.md` berisi ringkasan dataset: jumlah isian, objek, dan foto, status unduhan, hasil pemeriksaan, serta jumlah objek per split. Kalau ada masalah pada isian Form atau unduhan, daftarnya tercantum di bagian Validasi dan objek tersebut tidak dimasukkan ke split sampai diperbaiki. Foto yang gagal diunduh dicoba ulang otomatis sampai tiga kali, dan perintah yang sama bisa dijalankan lagi untuk mencoba sisanya.
 
@@ -84,7 +86,7 @@ Foto dari objek yang gagal pemeriksaan tetap tercatat, tetapi kolom `split`-nya 
 
 Pembagian dilakukan per objek, sehingga foto atas dan miring dari objek yang sama selalu berada di subset yang sama. Setiap kelas dibagi 70/15/15: test 15% dibulatkan ke atas, val 15% dibulatkan ke bawah, sisanya train.
 
-Subset setiap objek disimpan di `object_splits.csv` dan tidak pernah berubah. Objek baru hanya mengisi subset yang masih kurang. Dengan begitu, data yang sudah dipakai untuk memilih metode atau model tidak akan pindah ke test.
+Subset setiap objek disimpan di `dataset/object_splits.csv` dan tidak pernah berubah. Objek baru hanya mengisi subset yang masih kurang. Dengan begitu, data yang sudah dipakai untuk memilih metode atau model tidak akan pindah ke test. Perubahan file ini hanya di-commit oleh Farhan sebagai pemegang data. Anggota lain cukup `git pull` dan menjalankan `prepare_dataset`, dan hasilnya akan sama.
 
 Selama pengembangan, evaluasi memakai val. Test hanya dipakai sekali untuk hasil akhir.
 

@@ -25,7 +25,8 @@ from sklearn.metrics import f1_score
 from config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
 from src import dl
 from src.evaluate import evaluate, print_metrics, save_report
-from src.pcd import load_image, resize_43, run_pcd
+from src.pcd import run_pcd
+from src.utils import load_image, resize_43
 
 DL_SCENARIO = {"pcd": 3, "raw": 4}
 
@@ -68,6 +69,8 @@ def main():
     if not a.split.exists():
         sys.exit(f"{a.split} belum ada. Jalankan dulu: python scripts/prepare_dataset.py")
     df = pd.read_csv(a.split)
+    if not {"train", "val", "test"} <= set(df.subset):
+        sys.exit("Deep Learning butuh split train/val/test. Data belum cukup (lihat catatan prepare_dataset.py).")
     y_all = df.kelas.map(CLASSES.index).to_numpy()
     arrays = load_arrays(df, a.scenario)
 
@@ -153,4 +156,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except NotImplementedError as e:
+        sys.exit(f"\nBagian ini belum diisi: {e}")

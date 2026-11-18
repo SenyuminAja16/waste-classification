@@ -35,14 +35,15 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.decomposition import PCA
-from sklearn.model_selection import StratifiedGroupKFold, cross_val_score
+from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict, cross_val_score
 from sklearn.preprocessing import StandardScaler
 
 from config import CLASSES, MODELS_DIR, RESULTS_DIR, ROOT, SCENARIOS, SEED, SPLIT_CSV
 from src import features as F
 from src.dataset import build_features
 from src.ml import candidates
-from src.pcd import load_image, resize_43, run_pcd
+from src.pcd import run_pcd
+from src.utils import load_image, resize_43
 
 ML_SCENARIO = {"pcd": 1, "raw": 2}
 LABEL = {"pcd": "PCD+ML", "raw": "Raw+ML"}
@@ -108,13 +109,19 @@ def plot_pca(tag, X, y):
     fig.tight_layout(); fig.savefig(OUT / f"feature_pca_{tag}.png", dpi=150); plt.close(fig)
 
 
-def error_analysis(tag, df, X, y, model, subsets):
+def error_analysis(tag, df, X, y, g, model, subsets, n_splits):
     ev = df.subset.isin(subsets).to_numpy()
-    sub = df[ev].reset_index(drop=True)
-    proba = model.predict_proba(X[ev])
-    cls = list(model.classes_)
+    if ev.any():
+        sub = df[ev].reset_index(drop=True)
+        proba = model.predict_proba(X[ev])
+        cls = list(model.classes_)
+        true = y[ev]
+        asal = "+".join(subsets)
+    else:  # data kecil (belum ada split): pakai prediksi out-of-fold atas seluruh data
+        cv = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=SEED)
+        proba = cross_val_predict(clone(model), X, y, groups=g, cv=cv, method="predict_proba")
+        sub, cls, true, asal = df.reset_index(drop=True), list(range(len(CLASSES))), y, "CV out-of-fold"
     pred = np.array(cls)[proba.argmax(1)]
-    true = y[ev]
     wrong = pred != true
     rows = [{"path": sub.path[i], "id_objek": sub.id_objek[i], "posisi": sub.posisi[i], "subset": sub.subset[i],
              "benar": CLASSES[true[i]], "prediksi": CLASSES[int(pred[i])],
@@ -134,9 +141,9 @@ def error_analysis(tag, df, X, y, model, subsets):
             img = cv2.cvtColor(resize_43(load_image(ROOT / r["path"])), cv2.COLOR_BGR2RGB)
             ax.imshow(img)
             ax.set_title(f"{r['benar']} → {r['prediksi']} ({r['prob_prediksi']:.2f})", fontsize=9, color="firebrick")
-        fig.suptitle(f"Foto salah prediksi di {'+'.join(subsets)} ({LABEL[tag]}): benar → prediksi (prob.)")
+        fig.suptitle(f"Foto salah prediksi di {asal} ({LABEL[tag]}): benar → prediksi (prob.)")
         fig.tight_layout(); fig.savefig(OUT / f"errors_{tag}.png", dpi=130); plt.close(fig)
-    return int(wrong.sum()), int(ev.sum()), pairs
+    return int(wrong.sum()), int(len(true)), pairs
 
 
 def timing(tag, df, model, n=30):
@@ -181,7 +188,8 @@ def main():
     dev = df.subset.isin(["train", "val"]).to_numpy()
     min_obj = min(len(set(g[dev & (y == c)])) for c in range(len(CLASSES)))
     n_splits = max(2, min(5, min_obj))
-    has_groups = hasattr(F, "FEATURE_GROUPS") and hasattr(F, "COLOR_BINS")
+    N_SPLIT_ERR = n_splits
+    has_groups = bool(getattr(F, "FEATURE_GROUPS", None)) and hasattr(F, "COLOR_BINS")
 
     tags = ["pcd", "raw"] if a.scenario == "both" else [a.scenario]
     metas, cv_rows, abl_rows, best_cv, timings, err_info = {}, [], [], {}, [], {}
@@ -217,7 +225,7 @@ def main():
             print(f"[{tag}] FEATURE_GROUPS/COLOR_BINS tidak ada di src/features.py → ablation & plot HSV dilewati")
         plot_pca(tag, X, y)
 
-        err_info[tag] = error_analysis(tag, df, X, y, model, err_subsets)
+        err_info[tag] = error_analysis(tag, df, X, y, g, model, err_subsets, N_SPLIT_ERR)
         timings.append(timing(tag, df, model))
 
     if not metas:
@@ -291,4 +299,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except NotImplementedError as e:
+        sys.exit(f"\nBagian ini belum diisi: {e}")

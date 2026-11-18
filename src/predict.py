@@ -9,7 +9,8 @@ import numpy as np
 from config import CLASSES, MODELS_DIR, SCENARIOS
 from src import dl
 from src.features import extract_features
-from src.pcd import resize_43, run_pcd
+from src.pcd import run_pcd
+from src.utils import resize_43
 
 
 class ModelNotFound(Exception):
@@ -47,7 +48,7 @@ def _load_ml(path: str):
 
 def _predict_ml(path: Path, img, mask) -> np.ndarray:
     model = _load_ml(str(path))
-    x = extract_features(img, mask).reshape(1, -1)
+    x = np.asarray(extract_features(img, mask)).reshape(1, -1)
     if hasattr(model, "predict_proba"):
         p = model.predict_proba(x)[0]
     else:
@@ -86,8 +87,12 @@ def predict(scenario_id: int, img_bgr: np.ndarray, allow_demo: bool = False) -> 
     base = resize_43(img_bgr)
     steps, mask, model_input = {}, None, base
     if sc.use_pcd:
-        steps = run_pcd(base)
-        model_input, mask = steps["segmented"], steps["mask"]
+        try:
+            steps = run_pcd(base)
+            model_input, mask = steps["segmented"], steps["mask"]
+        except NotImplementedError:
+            if not allow_demo:      # mode demo boleh lewati PCD yang belum diisi
+                raise
 
     path, is_demo = model_path(scenario_id), False
     if not path.exists():

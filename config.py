@@ -1,4 +1,4 @@
-"""Konfigurasi bersama: dipakai oleh app, script training, dan inference.
+"""Konfigurasi bersama: dipakai app, scripts, dan src.
 
 PENTING: urutan CLASSES dan ukuran input harus SAMA saat training dan saat demo.
 """
@@ -8,30 +8,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"
-PROCESSED_DIR = DATA_DIR / "processed"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"
+PROCESSED_DIR = DATA_DIR / "processed"
+FOTO_DIR = ROOT / "cache" / "foto"            # foto hasil unduhan dari Google Drive
 RESULTS_DIR = ROOT / "results"
 MODELS_DIR = Path(os.environ.get("SAMPAH_MODELS_DIR", ROOT / "models"))
 
-# Urutan label (indeks DL = urutan ini). Nama folder di data/raw/ juga memakai nama ini.
+# Sumber data: sheet log_akuisisi (boleh lebih dari satu, nanti digabung) atau path CSV lokal.
+SHEET_ID = "1pIla_R8IoObqO355cR0OcMI6xyj8O602ODSbvMvFtS8"
+SUMBER_LOG = [f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Form%20Responses%201"]
+
+# Urutan label (indeks DL = urutan ini)
 CLASSES = ["plastik", "kertas", "kardus"]
-CLASS_CODE = {"plastik": "PL", "kertas": "KT", "kardus": "KD"}  # untuk ID objek PL-F-001
 
 CLASS_INFO = {
-    "plastik": {"title": "Plastik", "emoji": "🧴",
-                "contoh": "botol, gelas cup, wadah/tutup plastik, kresek"},
-    "kertas": {"title": "Kertas", "emoji": "📄",
-               "contoh": "HVS, koran, struk, kertas cokelat tipis, amplop, tisu"},
-    "kardus": {"title": "Kardus", "emoji": "📦",
-               "contoh": "karton bergelombang: kardus paket, kardus mi/air mineral"},
+    "plastik": {"title": "Plastik", "emoji": "🧴", "contoh": "botol, gelas cup, wadah/tutup plastik, kresek"},
+    "kertas": {"title": "Kertas", "emoji": "📄", "contoh": "HVS, koran, struk, kertas cokelat tipis, amplop, tisu"},
+    "kardus": {"title": "Kardus", "emoji": "📦", "contoh": "karton bergelombang: kardus paket, kardus mi/air mineral"},
 }
 
-SIZE_LANDSCAPE = (320, 240)  # (lebar, tinggi) rasio 4:3; foto portrait dibalik jadi (240, 320)
-DL_INPUT = 224               # input MobileNetV2
+SIZE_LANDSCAPE = (320, 240)   # (lebar, tinggi) rasio 4:3; foto portrait dibalik jadi (240, 320)
+DL_INPUT = 224                # input MobileNetV2
 
-# Pembagian data per objek (bukan per foto). Val = floor, test = ceil, sisanya train.
-VAL_FRAC, TEST_FRAC = 0.15, 0.15
+# Pembagian per objek: val = floor(15%), test = ceil(15%), sisanya train.
+# Kalau objek per kelas < MIN_OBJEK_SPLIT, split dilewati (hanya cross-validation).
+VAL_FRAC, TEST_FRAC, MIN_OBJEK_SPLIT = 0.15, 0.15, 10
 SEED = 42
 
 
@@ -40,7 +41,7 @@ class Scenario:
     id: int
     name: str
     short: str
-    tag: str       # "pcd" atau "raw" (dipakai untuk nama file & argumen script)
+    tag: str       # "pcd" atau "raw"
     use_pcd: bool
     kind: str      # "ml" atau "dl"
     file: str      # nama file model di folder models/

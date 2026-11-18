@@ -6,7 +6,7 @@ import cv2
 import streamlit as st
 
 from config import CLASS_INFO, CLASSES, SCENARIOS
-from src.pcd import load_image
+from src.utils import load_image
 from src.predict import ModelNotFound, model_available, model_path, predict
 
 st.set_page_config(page_title="Klasifikasi Sampah", page_icon="♻️", layout="wide")
@@ -61,6 +61,8 @@ with right:
         except ModelNotFound:
             st.error(f"Model untuk **{SCENARIOS[sid].short}** belum ada (`models/{model_path(sid).name}`). "
                      "Latih model dulu, atau aktifkan *Mode demo* di sidebar untuk mencoba tampilan.")
+        except NotImplementedError as e:
+            st.warning(f"Bagian ini belum diisi: {e}")
         except ImportError:
             st.error("Skenario Deep Learning butuh `torch` dan `torchvision`. Install dulu (lihat requirements.txt).")
         else:

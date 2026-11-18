@@ -18,7 +18,40 @@ Contoh implementasi yang jalan ada di klasifikasi_sampah.ipynb (bagian 4).
 
 Setelah isi file ini diubah, latih ulang: python scripts/train_ml.py --refresh
 """
+import numpy as np
+import pandas as pd
+
+from core.config import PROCESSED_DIR, ROOT
+from core.image import load_image, resize_43
+from pcd.pipeline import run_pcd
 
 
 def extract_features(img_bgr, mask=None):
     raise NotImplementedError("Isi extract_features() di src/features.py")
+
+
+def build_features(df: pd.DataFrame, tag: str, refresh: bool = False) -> np.ndarray:
+    """Matriks fitur (n_foto x n_fitur). tag 'pcd': resize → PCD → fitur. tag 'raw': resize → fitur.
+    Di-cache di data/processed/. Pakai refresh=True kalau PCD / fitur diubah."""
+    cache = PROCESSED_DIR / f"features_{tag}.npz"
+    paths = df.path.to_numpy()
+    if cache.exists() and not refresh:
+        z = np.load(cache, allow_pickle=True)
+        if np.array_equal(z["paths"], paths):
+            print(f"[{tag}] fitur dari cache: {cache.name}")
+            return z["X"]
+    feats = []
+    for i, p in enumerate(paths, 1):
+        img = resize_43(load_image(ROOT / p))
+        if tag == "pcd":
+            s = run_pcd(img)
+            feats.append(extract_features(s["segmented"], s["mask"]))
+        else:
+            feats.append(extract_features(img))
+        if i % 50 == 0 or i == len(paths):
+            print(f"[{tag}] ekstraksi fitur {i}/{len(paths)}", end="\r")
+    print()
+    X = np.stack(feats)
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    np.savez(cache, X=X, paths=paths)
+    return X

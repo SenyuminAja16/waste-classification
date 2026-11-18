@@ -2,6 +2,31 @@
 
 Dokumen ini menjelaskan data apa saja yang tersedia untuk bagian ML dan DL, di mana letaknya, dan bagaimana cara memakainya. Bagian PCD akan dilengkapi setelah pipeline PCD selesai.
 
+## Mulai cepat
+
+Dari root repo:
+
+```bash
+git pull
+uv sync
+```
+
+Salin `.env.example` menjadi `.env`, lalu isi `WASTE_SHEET_ID` dengan ID Sheet dari grup:
+
+```bash
+cp .env.example .env
+```
+
+Di PowerShell, pakai `Copy-Item .env.example .env`.
+
+Buat data. Proses pertama mengunduh sekitar 290 MB foto:
+
+```bash
+uv run python -m dataset.scripts.prepare_dataset
+```
+
+Setelah selesai, `data/metadata.csv` siap dipakai. Penjelasan setiap langkah ada di bagian berikutnya.
+
 ## Setup
 
 Di laptop, cukup sekali setelah clone:
@@ -102,6 +127,13 @@ Kerangka awal memakai `data/splits/split.csv`. File itu tidak dibuat lagi. Scrip
 | `posisi` | `view` |
 | `path`, dibaca dengan `ROOT / path` | `raw_path`, dibaca dengan `DATA_DIR / raw_path` |
 | `config.SPLIT_CSV` | `config.METADATA_CSV` |
+
+Script yang perlu disesuaikan:
+
+- `ml/scripts/train_ml.py`, `ml/scripts/analyze_ml.py`, dan `build_features` di `ml/features.py` (Jefri)
+- `dl/scripts/train_dl.py` (Faza)
+
+Setelah disesuaikan, jalankan `prepare_dataset` sekali untuk membuat `data/metadata.csv`, lalu jalankan script ML atau DL seperti biasa.
 
 `SPLIT_CSV` masih ada di `core/config.py` supaya import lama tidak error, dan akan dihapus setelah semua script pindah.
 

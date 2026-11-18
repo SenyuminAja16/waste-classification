@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", nargs="+", default=LOG_SOURCES, help="URL Sheet atau path CSV log akuisisi")
     parser.add_argument("--skip-download", action="store_true", help="pakai foto yang sudah ada tanpa mengunduh")
-    parser.add_argument("--workers", type=int, default=8, help="jumlah unduhan paralel")
+    parser.add_argument("--workers", type=int, default=4, help="jumlah unduhan paralel")
     return parser.parse_args()
 
 

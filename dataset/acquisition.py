@@ -1,6 +1,7 @@
 """Membaca log akuisisi dari Google Sheet dan mengunduh foto ke data/raw."""
 
 import re
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -25,6 +26,7 @@ SUBTYPE_PREFIX = "Sub-tipe"
 UPLOAD_PREFIX = "Masukkan Foto"
 VIEWS = ("atas", "miring")
 DOWNLOAD_URL = "https://drive.google.com/uc?export=download&id={}"
+DOWNLOAD_RETRIES = 3
 
 
 def read_log(source) -> pd.DataFrame:
@@ -79,15 +81,15 @@ def raw_path(label: str, object_id: str, view: str) -> str:
     return path.relative_to(DATA_DIR).as_posix()
 
 
-def download_photos(photos: pd.DataFrame, workers: int = 8) -> pd.DataFrame:
+def download_photos(photos: pd.DataFrame, workers: int = 4) -> pd.DataFrame:
     """Unduh foto yang belum ada di data/raw dan kembalikan tabel dengan kolom download_status."""
     with ThreadPoolExecutor(max_workers=workers) as pool:
         statuses = list(pool.map(download_photo, photos["file_id"], photos["raw_path"]))
     return photos.assign(download_status=statuses)
 
 
-def download_photo(file_id: str, relative_path: str) -> str:
-    """Unduh satu foto; hasilnya exists, downloaded, no_link, failed, atau not_image."""
+def download_photo(file_id: str, relative_path: str, retries: int = DOWNLOAD_RETRIES) -> str:
+    """Unduh satu foto dan coba ulang kalau gagal; hasilnya exists, downloaded, no_link, failed, atau not_image."""
     target = DATA_DIR / relative_path
     if target.exists():
         return "exists"
@@ -95,6 +97,19 @@ def download_photo(file_id: str, relative_path: str) -> str:
         return "no_link"
 
     target.parent.mkdir(parents=True, exist_ok=True)
+    status = "failed"
+    for attempt in range(retries):
+        if attempt:
+            # Jeda 2 lalu 4 detik memberi waktu saat Drive membatasi unduhan yang terlalu rapat.
+            time.sleep(2**attempt)
+        status = fetch_photo(file_id, target)
+        if status == "downloaded":
+            break
+    return status
+
+
+def fetch_photo(file_id: str, target) -> str:
+    """Satu kali percobaan unduh; file hanya disimpan kalau isinya gambar yang valid."""
     partial = target.with_suffix(".part")
     try:
         with urllib.request.urlopen(DOWNLOAD_URL.format(file_id), timeout=60) as response:

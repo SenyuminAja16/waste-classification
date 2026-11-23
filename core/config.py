@@ -10,6 +10,7 @@ load_dotenv(ROOT / ".env")
 
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
+PROCESSED_DIR = DATA_DIR / "processed"
 METADATA_CSV = DATA_DIR / "metadata.csv"
 OBJECT_SPLITS_CSV = ROOT / "dataset" / "object_splits.csv"
 SPLIT_CSV = DATA_DIR / "splits" / "split.csv"

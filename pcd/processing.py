@@ -3,7 +3,16 @@
 import cv2
 import numpy as np
 
+from core.config import SEED
+
 CHANNELS = ("gray", "saturation")
+
+
+def histogram_equalization(img: np.ndarray) -> np.ndarray:
+    """Histogram equalization global pada kanal L (LAB); dipakai sebagai pembanding CLAHE."""
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lightness, a, b = cv2.split(lab)
+    return cv2.cvtColor(cv2.merge((cv2.equalizeHist(lightness), a, b)), cv2.COLOR_LAB2BGR)
 
 
 def clahe(img: np.ndarray, clip: float = 2.0, tile: int = 8) -> np.ndarray:
@@ -49,11 +58,7 @@ def grabcut_mask(img: np.ndarray, margin: float = 0.05, iterations: int = 5) -> 
     dx, dy = int(width * margin), int(height * margin)
     rect = (dx, dy, width - 2 * dx, height - 2 * dy)
     labels = np.zeros((height, width), np.uint8)
-    background_model = np.zeros((1, 65), np.float64)
-    foreground_model = np.zeros((1, 65), np.float64)
-    cv2.grabCut(img, labels, rect, background_model, foreground_model, iterations, cv2.GC_INIT_WITH_RECT)
-    foreground = (labels == cv2.GC_FGD) | (labels == cv2.GC_PR_FGD)
-    return np.where(foreground, 255, 0).astype(np.uint8)
+    return run_grabcut(img, labels, rect, cv2.GC_INIT_WITH_RECT, iterations)
 
 
 def grabcut_from_mask(img: np.ndarray, seed: np.ndarray, border: float = 0.03, iterations: int = 5) -> np.ndarray:
@@ -63,9 +68,16 @@ def grabcut_from_mask(img: np.ndarray, seed: np.ndarray, border: float = 0.03, i
     band = max(int(min(height, width) * border), 1)
     labels[:band] = labels[-band:] = cv2.GC_BGD
     labels[:, :band] = labels[:, -band:] = cv2.GC_BGD
+    return run_grabcut(img, labels, None, cv2.GC_INIT_WITH_MASK, iterations)
+
+
+def run_grabcut(img: np.ndarray, labels: np.ndarray, rect, mode: int, iterations: int) -> np.ndarray:
+    """Jalankan GrabCut dan kembalikan mask objek 0/255."""
+    # Model warna GrabCut diawali k-means dengan titik acak; seed dikunci supaya hasil setiap foto selalu sama.
+    cv2.setRNGSeed(SEED)
     background_model = np.zeros((1, 65), np.float64)
     foreground_model = np.zeros((1, 65), np.float64)
-    cv2.grabCut(img, labels, None, background_model, foreground_model, iterations, cv2.GC_INIT_WITH_MASK)
+    cv2.grabCut(img, labels, rect, background_model, foreground_model, iterations, mode)
     foreground = (labels == cv2.GC_FGD) | (labels == cv2.GC_PR_FGD)
     return np.where(foreground, 255, 0).astype(np.uint8)
 

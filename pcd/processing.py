@@ -6,6 +6,7 @@ import numpy as np
 from core.config import SEED
 
 CHANNELS = ("gray", "saturation")
+POLARITIES = ("border", "center")
 
 
 def histogram_equalization(img: np.ndarray) -> np.ndarray:
@@ -34,8 +35,11 @@ def blur(img: np.ndarray, size: int = 5) -> np.ndarray:
     return cv2.GaussianBlur(img, (size, size), 0)
 
 
-def otsu_mask(img: np.ndarray, channel: str = "gray") -> np.ndarray:
-    """Threshold Otsu pada kanal gray atau saturation; objek bernilai 255."""
+def otsu_mask(img: np.ndarray, channel: str = "gray", polarity: str = "border") -> np.ndarray:
+    """Threshold Otsu pada kanal gray atau saturation, objek bernilai 255.
+
+    polarity "border" menganggap tepi foto sebagai latar, "center" menganggap tengah foto sebagai objek.
+    """
     if channel == "gray":
         values = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     elif channel == "saturation":
@@ -43,13 +47,24 @@ def otsu_mask(img: np.ndarray, channel: str = "gray") -> np.ndarray:
     else:
         raise ValueError(f"channel harus salah satu dari {CHANNELS}")
     _, mask = cv2.threshold(values, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return background_at_border(mask)
+    if polarity == "border":
+        return background_at_border(mask)
+    if polarity == "center":
+        return object_at_center(mask)
+    raise ValueError(f"polarity harus salah satu dari {POLARITIES}")
 
 
 def background_at_border(mask: np.ndarray) -> np.ndarray:
     """Balik mask kalau tepi foto lebih banyak putih, karena tepi dianggap latar."""
     border = np.concatenate([mask[0], mask[-1], mask[:, 0], mask[:, -1]])
     return cv2.bitwise_not(mask) if border.mean() > 127 else mask
+
+
+def object_at_center(mask: np.ndarray) -> np.ndarray:
+    """Balik mask kalau bagian putihnya jarang ada di tengah foto."""
+    height, width = mask.shape
+    center = mask[height // 4 : 3 * height // 4, width // 4 : 3 * width // 4]
+    return cv2.bitwise_not(mask) if center.mean() < mask.mean() else mask
 
 
 def grabcut_mask(img: np.ndarray, margin: float = 0.05, iterations: int = 5) -> np.ndarray:
@@ -73,7 +88,7 @@ def grabcut_from_mask(img: np.ndarray, seed: np.ndarray, border: float = 0.03, i
 
 def run_grabcut(img: np.ndarray, labels: np.ndarray, rect, mode: int, iterations: int) -> np.ndarray:
     """Jalankan GrabCut dan kembalikan mask objek 0/255."""
-    # Model warna GrabCut diawali k-means dengan titik acak; seed dikunci supaya hasil setiap foto selalu sama.
+    # GrabCut memakai k-means dengan titik awal acak, jadi seed dikunci agar hasilnya selalu sama.
     cv2.setRNGSeed(SEED)
     background_model = np.zeros((1, 65), np.float64)
     foreground_model = np.zeros((1, 65), np.float64)
@@ -89,11 +104,11 @@ def plausible_mask(mask: np.ndarray, min_area: float = 0.03, max_area: float = 0
     return min_area <= area <= max_area and (border > 0).mean() <= max_border
 
 
-def clean_mask(mask: np.ndarray, size: int = 5, min_share: float = 0.1) -> np.ndarray:
-    """Opening, closing, lalu sisakan komponen yang cukup besar dengan lubangnya terisi.
+def clean_mask(mask: np.ndarray, size: int = 5, min_share: float = 0.1, fill_holes: bool = True) -> np.ndarray:
+    """Opening, closing, buang komponen kecil, lalu isi lubang kalau fill_holes aktif.
 
-    Komponen disimpan kalau luasnya minimal min_share dari komponen terbesar, sehingga potongan
-    sampah yang terpisah tetap ikut, sedangkan bintik kecil di latar terbuang.
+    Komponen disimpan kalau luasnya minimal min_share dari komponen terbesar, jadi potongan
+    sampah yang terpisah tetap ikut dan bintik kecil di latar terbuang.
     """
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size, size))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
@@ -104,7 +119,7 @@ def clean_mask(mask: np.ndarray, size: int = 5, min_share: float = 0.1) -> np.nd
         largest = max(cv2.contourArea(contour) for contour in contours)
         kept = [contour for contour in contours if cv2.contourArea(contour) >= min_share * largest]
         cv2.drawContours(cleaned, kept, -1, 255, thickness=cv2.FILLED)
-    return cleaned
+    return cleaned if fill_holes else cv2.bitwise_and(cleaned, mask)
 
 
 def apply_mask(img: np.ndarray, mask: np.ndarray) -> np.ndarray:

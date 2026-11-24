@@ -1,16 +1,17 @@
 # Ringkasan Dataset
 
-Isian Form terakhir: 2026-11-18 12:59
+Isian Form terakhir: 2026-11-24 13:41
 
 ## Jumlah
 
-- Isian Form: 99
-- Objek: 99
-- Foto: 198
+- Isian Form: 138
+- Objek: 138
+- Foto: 276
 
 ## Unduhan
 
 - exists: 198
+- downloaded: 78
 
 ## Validasi
 
@@ -20,7 +21,7 @@ Tidak ada masalah.
 
 | label | train | val | test | total |
 |---|---|---|---|---|
-| kardus | 23 | 5 | 6 | 34 |
-| kertas | 18 | 4 | 5 | 27 |
-| plastik | 27 | 5 | 6 | 38 |
-| total | 68 | 14 | 17 | 99 |
+| kardus | 33 | 6 | 7 | 46 |
+| kertas | 33 | 7 | 8 | 48 |
+| plastik | 31 | 6 | 7 | 44 |
+| total | 97 | 19 | 22 | 138 |

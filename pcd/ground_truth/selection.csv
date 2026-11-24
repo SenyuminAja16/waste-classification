@@ -1,0 +1,31 @@
+object_id,view,label,subtype,lighting,condition,raw_path
+PL-F-014,atas,plastik,botol,dalam-lampu,bersih,raw/plastik/PL-F-014/PL-F-014-atas.jpg
+PL-M-013,miring,plastik,bungkus snack,dalam-alami,bersih,raw/plastik/PL-M-013/PL-M-013-miring.jpg
+PL-F-011,atas,plastik,botol,luar-teduh,rusak,raw/plastik/PL-F-011/PL-F-011-atas.jpg
+PL-M-006,miring,plastik,bungkus snack,luar-terang,bersih,raw/plastik/PL-M-006/PL-M-006-miring.jpg
+PL-F-001,atas,plastik,gelas cup,luar-terang,bersih,raw/plastik/PL-F-001/PL-F-001-atas.jpg
+PL-F-017,miring,plastik,kresek,dalam-lampu,rusak,raw/plastik/PL-F-017/PL-F-017-miring.jpg
+PL-J-010,atas,plastik,kresek,dalam-lampu,rusak,raw/plastik/PL-J-010/PL-J-010-atas.jpg
+PL-M-007,miring,plastik,botol,luar-terang,bersih,raw/plastik/PL-M-007/PL-M-007-miring.jpg
+PL-F-016,atas,plastik,gelas cup,dalam-lampu,rusak,raw/plastik/PL-F-016/PL-F-016-atas.jpg
+PL-F-010,miring,plastik,botol,dalam-alami,bersih,raw/plastik/PL-F-010/PL-F-010-miring.jpg
+KT-M-014,atas,kertas,lembaran utuh,dalam-lampu,bersih,raw/kertas/KT-M-014/KT-M-014-atas.jpg
+KT-J-008,miring,kertas,diremas,dalam-alami,rusak,raw/kertas/KT-J-008/KT-J-008-miring.jpg
+KT-M-007,atas,kertas,koran/struk,dalam-alami,bersih,raw/kertas/KT-M-007/KT-M-007-atas.jpg
+KT-J-014,miring,kertas,diremas,dalam-alami,rusak,raw/kertas/KT-J-014/KT-J-014-miring.jpg
+KT-F-013,atas,kertas,lembaran utuh,dalam-lampu,bersih,raw/kertas/KT-F-013/KT-F-013-atas.jpg
+KT-F-014,miring,kertas,dilipat/sobek,dalam-lampu,rusak,raw/kertas/KT-F-014/KT-F-014-miring.jpg
+KT-M-015,atas,kertas,dilipat/sobek,dalam-lampu,rusak,raw/kertas/KT-M-015/KT-M-015-atas.jpg
+KT-M-008,miring,kertas,lembaran utuh,dalam-alami,bersih,raw/kertas/KT-M-008/KT-M-008-miring.jpg
+KT-J-005,atas,kertas,lembaran utuh,luar-teduh,bersih,raw/kertas/KT-J-005/KT-J-005-atas.jpg
+KT-F-006,miring,kertas,koran/struk,dalam-alami,rusak,raw/kertas/KT-F-006/KT-F-006-miring.jpg
+KD-M-015,atas,kardus,kotak utuh,dalam-alami,kotor,raw/kardus/KD-M-015/KD-M-015-atas.jpg
+KD-J-004,miring,kardus,kotak utuh,luar-terang,bersih,raw/kardus/KD-J-004/KD-J-004-miring.jpg
+KD-M-009,atas,kardus,kotak utuh,dalam-alami,rusak,raw/kardus/KD-M-009/KD-M-009-atas.jpg
+KD-J-009,miring,kardus,potongan/lembaran,dalam-alami,rusak,raw/kardus/KD-J-009/KD-J-009-miring.jpg
+KD-F-013,atas,kardus,kotak utuh,dalam-lampu,kotor,raw/kardus/KD-F-013/KD-F-013-atas.jpg
+KD-F-015,miring,kardus,potongan/lembaran,luar-teduh,bersih,raw/kardus/KD-F-015/KD-F-015-miring.jpg
+KD-M-016,atas,kardus,kotak utuh,dalam-alami,rusak,raw/kardus/KD-M-016/KD-M-016-atas.jpg
+KD-M-011,miring,kardus,kotak utuh,dalam-lampu,bersih,raw/kardus/KD-M-011/KD-M-011-miring.jpg
+KD-F-018,atas,kardus,potongan/lembaran,dalam-alami,rusak,raw/kardus/KD-F-018/KD-F-018-atas.jpg
+KD-F-012,miring,kardus,kotak utuh,luar-teduh,rusak,raw/kardus/KD-F-012/KD-F-012-miring.jpg

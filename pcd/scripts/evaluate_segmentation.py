@@ -17,12 +17,25 @@ OUTPUT_DIR = REPORTS_DIR / "pcd"
 FAILED_IOU = 0.5
 REFERENCE = "pipeline"
 
+
+def otsu_grabcut(img: np.ndarray, polarity: str = "border") -> np.ndarray:
+    """Pipeline Progress 2: tebakan Otsu saturation diteruskan ke GrabCut, dengan GrabCut kotak sebagai cadangan."""
+    enhanced = processing.clahe(img)
+    seed = processing.clean_mask(processing.otsu_mask(processing.blur(enhanced), "saturation", polarity))
+    if processing.plausible_mask(seed):
+        mask = processing.grabcut_from_mask(enhanced, seed)
+        if processing.plausible_mask(processing.clean_mask(mask)):
+            return processing.clean_mask(mask)
+    return processing.clean_mask(processing.grabcut_mask(enhanced))
+
+
 METHODS = {
     "otsu_gray": lambda img: processing.clean_mask(processing.otsu_mask(processing.blur(processing.clahe(img)), "gray")),
     "otsu_saturation": lambda img: processing.clean_mask(
         processing.otsu_mask(processing.blur(processing.clahe(img)), "saturation")
     ),
     "grabcut_rect": lambda img: processing.clean_mask(processing.grabcut_mask(processing.clahe(img))),
+    "otsu_grabcut": otsu_grabcut,
     "pipeline": lambda img: run_pcd(img)["mask"],
 }
 

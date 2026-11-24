@@ -1,5 +1,6 @@
-metode,IoU rata-rata,IoU ±95%,IoU median,Dice rata-rata,gagal (IoU<0.5),pipeline lebih baik,pipeline lebih buruk
-otsu_gray,0.519,0.118,0.551,0.623,14,20,8
-otsu_saturation,0.481,0.141,0.507,0.555,15,22,2
-grabcut_rect,0.836,0.085,0.969,0.889,3,3,9
-pipeline,0.708,0.13,0.834,0.761,6,0,0
+metode,IoU rata-rata,IoU ±95%,IoU median,Dice rata-rata,gagal (IoU<0.5),lebih baik dari pipeline,lebih buruk dari pipeline
+otsu_gray,0.519,0.118,0.551,0.623,14,1,27
+otsu_saturation,0.481,0.141,0.507,0.555,15,2,25
+grabcut_rect,0.836,0.085,0.969,0.889,3,7,8
+otsu_grabcut,0.708,0.13,0.834,0.761,6,9,12
+pipeline,0.885,0.059,0.938,0.93,1,0,0

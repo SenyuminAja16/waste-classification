@@ -10,7 +10,7 @@ from core.image import load_image, resize_43
 from pcd import processing
 from pcd.evaluate import dice, iou
 from pcd.scripts.annotate_gt import mask_path
-from pcd.scripts.evaluate_segmentation import OUTPUT_DIR, summarize
+from pcd.scripts.evaluate_segmentation import OUTPUT_DIR, otsu_grabcut, summarize
 from pcd.scripts.select_gt_photos import SELECTION_CSV
 
 INPUTS = {
@@ -29,24 +29,13 @@ def config_name(source: str, margin: float, iterations: int, fill_holes: bool) -
     return f"grabcut {source} m{margin:.2f} it{iterations} {'isi' if fill_holes else 'tanpa_isi'}"
 
 
-def otsu_center_segment(img):
-    """Pipeline lama, tapi sisi objek Otsu ditentukan dari tengah foto."""
-    enhanced = processing.clahe(img)
-    seed = processing.clean_mask(processing.otsu_mask(processing.blur(enhanced), "saturation", "center"))
-    if processing.plausible_mask(seed):
-        mask = processing.grabcut_from_mask(enhanced, seed)
-        if processing.plausible_mask(processing.clean_mask(mask)):
-            return processing.clean_mask(mask)
-    return processing.clean_mask(processing.grabcut_mask(enhanced))
-
-
 def predictions(img):
     """Jalankan semua setelan pada satu foto."""
     for source, margin, iterations in product(INPUTS, MARGINS, ITERATIONS):
         raw = processing.grabcut_mask(INPUTS[source](img), margin, iterations)
         for fill_holes in FILL_HOLES:
             yield config_name(source, margin, iterations, fill_holes), processing.clean_mask(raw, fill_holes=fill_holes)
-    yield OTSU_CENTER, otsu_center_segment(img)
+    yield OTSU_CENTER, otsu_grabcut(img, polarity="center")
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-"""Jalankan pipeline PCD ke semua foto, simpan hasilnya, dan buat contact sheet untuk pemeriksaan."""
+"""Jalankan pipeline PCD ke semua foto, simpan hasilnya, dan buat contact sheet foto train untuk pemeriksaan."""
 
 from pathlib import Path
 
@@ -50,7 +50,7 @@ def main() -> None:
     areas, plausible, previews = [], [], {}
     for number, raw_path in enumerate(photos["raw_path"], 1):
         result = run_pcd(resize_43(load_image(DATA_DIR / raw_path)))
-        for kind, image in (("pcd", result["segmented"]), ("masks", result["mask"])):
+        for kind, image in (("pcd", result["segmented"]), ("masks", result["mask"]), ("roi", result["roi"])):
             target = output_path(raw_path, kind)
             target.parent.mkdir(parents=True, exist_ok=True)
             cv2.imwrite(str(target), image)
@@ -60,16 +60,18 @@ def main() -> None:
         print(f"PCD {number}/{len(photos)}", end="\r")
     print()
 
-    qc = photos.assign(mask_area=areas, plausible=plausible)
+    # Val dan test tetap diproses, tetapi hanya train yang diperiksa supaya keputusan PCD tidak dipengaruhi data evaluasi.
+    qc = photos.assign(mask_area=areas, plausible=plausible).query("split == 'train'")
     for label in CLASSES:
         save_contact_sheet(qc, previews, label)
 
     flagged = qc[~qc["plausible"]]
-    print(f"Hasil PCD: {PROCESSED_DIR / 'pcd'}")
+    print(f"Hasil PCD: {PROCESSED_DIR / 'pcd'} ({len(photos)} foto)")
     print(f"Mask:      {PROCESSED_DIR / 'masks'}")
-    print(f"Contact sheet: {QC_DIR}")
-    print(f"Luas mask (median): {qc['mask_area'].median():.0%}")
-    print(f"Mask tidak wajar: {len(flagged)} dari {len(qc)} foto")
+    print(f"ROI:       {PROCESSED_DIR / 'roi'}")
+    print(f"Contact sheet (train): {QC_DIR}")
+    print(f"Luas mask train (median): {qc['mask_area'].median():.0%}")
+    print(f"Mask tidak wajar di train: {len(flagged)} dari {len(qc)} foto")
     if not flagged.empty:
         print(flagged[["object_id", "view", "split", "mask_area"]].round(2).to_string(index=False))
 

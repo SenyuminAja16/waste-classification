@@ -28,6 +28,10 @@ KD-J-008,kardus,val
 KD-J-009,kardus,train
 KD-J-010,kardus,train
 KD-J-011,kardus,val
+KD-J-012,kardus,train
+KD-J-013,kardus,train
+KD-J-014,kardus,val
+KD-J-015,kardus,test
 KD-M-001,kardus,test
 KD-M-002,kardus,train
 KD-M-003,kardus,train
@@ -76,6 +80,9 @@ KT-J-011,kertas,test
 KT-J-012,kertas,test
 KT-J-013,kertas,val
 KT-J-014,kertas,train
+KT-J-015,kertas,train
+KT-J-016,kertas,train
+KT-J-017,kertas,train
 KT-M-001,kertas,train
 KT-M-002,kertas,train
 KT-M-003,kertas,train
@@ -120,6 +127,15 @@ PL-J-007,plastik,train
 PL-J-008,plastik,train
 PL-J-009,plastik,train
 PL-J-010,plastik,train
+PL-J-011,plastik,test
+PL-J-012,plastik,train
+PL-J-013,plastik,train
+PL-J-014,plastik,train
+PL-J-015,plastik,train
+PL-J-016,plastik,train
+PL-J-017,plastik,train
+PL-J-018,plastik,train
+PL-J-019,plastik,val
 PL-M-001,plastik,val
 PL-M-002,plastik,train
 PL-M-003,plastik,train

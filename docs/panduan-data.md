@@ -35,7 +35,7 @@ Di laptop, cukup sekali setelah clone:
 2. Salin `.env.example` menjadi `.env`, lalu isi `WASTE_SHEET_ID` dengan ID Google Sheet log akuisisi. ID-nya ada di grup, tidak disimpan di repo.
 3. Jalankan script dari root repo dengan `uv run python -m <modul>`.
 
-Di Colab, clone repo lalu jalankan `pip install -e .` dari root repo. Simpan ID Sheet di Colab Secrets dengan nama `WASTE_SHEET_ID`, kemudian set ke environment sebelum meng-import `core`:
+Di Colab, clone repo lalu jalankan `pip install -e . pyyaml` dari root repo. Simpan ID Sheet di Colab Secrets dengan nama `WASTE_SHEET_ID`, kemudian set ke environment sebelum meng-import `core`:
 
 ```python
 import os
@@ -131,12 +131,41 @@ Kerangka awal memakai `data/splits/split.csv`. File itu tidak dibuat lagi. Scrip
 Script yang perlu disesuaikan:
 
 - `ml/scripts/train_ml.py`, `ml/scripts/analyze_ml.py`, dan `build_features` di `ml/features.py` (Jefri)
-- `dl/scripts/train_dl.py` (Faza)
 
-Setelah disesuaikan, jalankan `prepare_dataset` sekali untuk membuat `data/metadata.csv`, lalu jalankan script ML atau DL seperti biasa.
+Training DL sudah membaca `data/metadata.csv`. Setelah script ML disesuaikan, keduanya bisa memakai metadata yang sama.
 
 `SPLIT_CSV` masih ada di `core/config.py` supaya import lama tidak error, dan akan dihapus setelah semua script pindah.
 
 ## Raw dan PCD
 
 Citra Raw adalah foto yang diputar sesuai EXIF dengan `core.image.load_image`, lalu di-resize dengan `core.image.resize_43`. Citra PCD adalah citra Raw yang sudah melewati `pcd.pipeline.run_pcd`. Pipeline PCD yang sama dipakai untuk semua foto, baik train, val, test, maupun foto baru di demo.
+
+## Eksperimen Deep Learning
+
+Setelah `data/metadata.csv` dan foto tersedia, edit [`dl/config.yaml`](../dl/config.yaml) lalu jalankan dari root repo:
+
+```bash
+uv run --group dl python -m dl.train
+```
+
+Atur `data.scenario` ke `raw`, `pcd`, atau `both`. Gunakan `both` untuk membandingkan kedua skenario dengan pengaturan yang sama. Batch size ada di `data.batch_size`. Jumlah epoch dan learning rate untuk kedua fase ada di bagian `train`. `--config path/eksperimen.yaml` bisa dipakai untuk menjalankan salinan konfigurasi lain. Di Colab, gunakan `python -m dl.train`.
+
+| Modul di `dl/` | Tanggung jawab |
+|---|---|
+| `config.py` | Baca dan validasi YAML, tentukan folder run. |
+| `data.py`, `transforms.py` | Baca metadata, siapkan Raw dan PCD, augmentasi train, dan preprocessing untuk inferensi. |
+| `model.py` | Bangun MobileNetV2 dan atur blok yang dilatih di tiap fase. |
+| `engine.py` | Jalankan training atau evaluasi satu epoch. |
+| `logger.py`, `utils.py` | Catat riwayat epoch, atur seed dan device, serta muat bobot. |
+| `train.py` | Jalankan kedua fase training dan simpan checkpoint terbaik. |
+| `predict.py` | Evaluasi checkpoint terpilih pada split test. |
+
+Setiap skenario menyimpan checkpoint `best.pt` berdasarkan F1 macro validation, `history.json`, metrik dan confusion matrix validation, serta salinan konfigurasi dan metadata di folder baru di bawah `reports/dl/`. Terminal menampilkan lokasi foldernya.
+
+Setelah memilih run final, jalankan perintah berikut untuk mengevaluasi `best.pt` pada foto test yang tercatat di metadata run itu. Ganti `RUN_DIR` dengan folder run yang ditampilkan oleh training.
+
+```bash
+uv run --group dl python -m dl.predict RUN_DIR
+```
+
+Hasil evaluasi disimpan sebagai `test.json` dan `test_cm.png` di folder run. Untuk demo, salin `best.pt` dari run Raw sebagai `models/dl_raw.pt` dan dari run PCD sebagai `models/dl_pcd.pt`.

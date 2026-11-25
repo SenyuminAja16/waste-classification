@@ -1,0 +1,19 @@
+seed: 42
+device: auto # auto, cpu, atau cuda
+
+data:
+  scenario: both # raw, pcd, atau both
+  metadata: data/metadata.csv
+  batch_size: 16
+
+model:
+  pretrained: true # bobot ImageNet untuk MobileNetV2
+
+train:
+  epochs_head: 5
+  epochs_finetune: 10
+  lr_head: 0.001
+  lr_finetune: 0.0001
+
+output:
+  dir: reports/dl # tiap skenario dan percobaan punya folder sendiri

@@ -8,7 +8,8 @@ import numpy as np
 
 from core.config import CLASSES, MODELS_DIR, SCENARIOS
 from core.image import resize_43
-from dl import models as dl
+from dl.model import build_model
+from dl.transforms import to_rgb224, to_tensor
 from ml.features import extract_features
 from pcd.pipeline import run_pcd
 
@@ -64,7 +65,7 @@ def _predict_ml(path: Path, img, mask) -> np.ndarray:
 @lru_cache(maxsize=2)
 def _load_dl(path: str):
     import torch
-    m = dl.build_model(pretrained=False)
+    m = build_model(pretrained=False)
     m.load_state_dict(torch.load(path, map_location="cpu"))
     return m.eval()
 
@@ -72,7 +73,7 @@ def _load_dl(path: str):
 def _predict_dl(path: Path, img) -> np.ndarray:
     import torch
     model = _load_dl(str(path))
-    x = dl.to_tensor(dl.to_rgb224(img)).unsqueeze(0)
+    x = to_tensor(to_rgb224(img)).unsqueeze(0)
     with torch.no_grad():
         return torch.softmax(model(x), dim=1)[0].numpy()
 

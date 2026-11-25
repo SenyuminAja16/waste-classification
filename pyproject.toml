@@ -19,7 +19,7 @@ dependencies = [
 
 [dependency-groups]
 dev = ["jupyterlab", "ruff"]
-dl = ["torch", "torchvision"]
+dl = ["pyyaml", "torch", "torchvision"]
 
 [build-system]
 requires = ["hatchling"]

@@ -24,10 +24,10 @@ def evaluate(y_true, y_pred) -> dict:
     }
 
 
-def save_report(name: str, metrics: dict, extra: dict | None = None):
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+def save_report(name: str, metrics: dict, extra: dict | None = None, *, output_dir=REPORTS_DIR):
+    output_dir.mkdir(parents=True, exist_ok=True)
     out = dict(metrics, **(extra or {}))
-    (REPORTS_DIR / f"{name}.json").write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
+    (output_dir / f"{name}.json").write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
 
     cm = np.array(metrics["confusion_matrix"])
     fig, ax = plt.subplots(figsize=(4, 3.6))
@@ -42,7 +42,7 @@ def save_report(name: str, metrics: dict, extra: dict | None = None):
             ax.text(j, i, cm[i, j], ha="center", va="center",
                     color="white" if cm[i, j] > cm.max() / 2 else "black")
     fig.tight_layout()
-    fig.savefig(REPORTS_DIR / f"{name}_cm.png", dpi=150)
+    fig.savefig(output_dir / f"{name}_cm.png", dpi=150)
     plt.close(fig)
 
 

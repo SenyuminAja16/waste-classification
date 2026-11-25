@@ -3728,6 +3728,7 @@ dev = [
     { name = "ruff" },
 ]
 dl = [
+    { name = "pyyaml" },
     { name = "torch" },
     { name = "torchvision" },
 ]
@@ -3753,6 +3754,7 @@ dev = [
     { name = "ruff" },
 ]
 dl = [
+    { name = "pyyaml" },
     { name = "torch" },
     { name = "torchvision" },
 ]

@@ -1,0 +1,47 @@
+{
+  "accuracy": 0.7619047619047619,
+  "precision_macro": 0.7797619047619048,
+  "recall_macro": 0.7619047619047619,
+  "f1_macro": 0.768009768009768,
+  "per_class": {
+    "plastik": {
+      "precision": 1.0,
+      "recall": 0.8571428571428571,
+      "f1": 0.9230769230769231,
+      "support": 14
+    },
+    "kertas": {
+      "precision": 0.7142857142857143,
+      "recall": 0.7142857142857143,
+      "f1": 0.7142857142857143,
+      "support": 14
+    },
+    "kardus": {
+      "precision": 0.625,
+      "recall": 0.7142857142857143,
+      "f1": 0.6666666666666666,
+      "support": 14
+    }
+  },
+  "confusion_matrix": [
+    [
+      12,
+      0,
+      2
+    ],
+    [
+      0,
+      10,
+      4
+    ],
+    [
+      0,
+      4,
+      10
+    ]
+  ],
+  "n_test": 42,
+  "scenario": "pcd",
+  "model": "efficientnet_b0",
+  "best_epoch": 12
+}

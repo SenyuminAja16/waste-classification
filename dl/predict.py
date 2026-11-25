@@ -9,21 +9,21 @@ from core.evaluate import print_metrics, save_report
 from dl.config import load_config
 from dl.data import make_loader, read_photos
 from dl.engine import score_model
-from dl.model import build_model
-from dl.utils import load_weights, resolve_device
+from dl.model import DEFAULT_MODEL
+from dl.utils import load_checkpoint, resolve_device
 
 
 def evaluate_run(run_dir: Path):
     config = load_config(run_dir / "config.yaml")
     scenario = config["data"]["scenario"]
     device = resolve_device(config["device"])
-    model = build_model(pretrained=False).to(device)
-    load_weights(model, run_dir / "best.pt", device)
+    model, image_size = load_checkpoint(run_dir / "best.pt", device)
 
     photos = read_photos(run_dir / "metadata.csv")
-    test_loader = make_loader(photos, "test", scenario, config["data"]["batch_size"])
+    test_loader = make_loader(photos, "test", scenario, config["data"]["batch_size"], image_size=image_size)
     metrics, loss = score_model(model, test_loader, nn.CrossEntropyLoss(), device)
-    save_report("test", metrics, {"scenario": scenario, "loss": loss}, output_dir=run_dir)
+    info = {"scenario": scenario, "model": config["model"].get("name", DEFAULT_MODEL), "loss": loss}
+    save_report("test", metrics, info, output_dir=run_dir)
     print_metrics(f"DL {scenario} TEST", metrics)
 
 

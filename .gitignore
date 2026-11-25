@@ -8,5 +8,6 @@ data/
 cache/
 models/*
 !models/.gitkeep
+reports/dl/**/*.pt
 
 docs_internal/

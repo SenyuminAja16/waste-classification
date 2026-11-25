@@ -1,0 +1,3 @@
+model,mean,std
+efficientnet_b0,-0.098449,0.054255
+mobilenet_v2,-0.044236,0.021302

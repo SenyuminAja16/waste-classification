@@ -1,0 +1,29 @@
+seed: 42
+device: auto
+data:
+  scenario: pcd
+  metadata: data/metadata.csv
+  batch_size: 16
+  image_size: 224
+  augmentation:
+    enabled: true
+    horizontal_flip: 0.5
+    rotation: 10.0
+    brightness: 0.2
+    contrast: 0.2
+model:
+  name: efficientnet_b0
+  pretrained: true
+  dropout: 0.2
+optimizer:
+  name: adamw
+  weight_decay: 0.0
+train:
+  epochs_head: 10
+  epochs_finetune: 3
+  finetune_blocks: 1
+  lr_head: 0.001
+  lr_finetune: 0.0001
+  early_stopping_patience: 0
+output:
+  dir: reports/dl

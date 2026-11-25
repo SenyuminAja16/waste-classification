@@ -1,0 +1,5 @@
+model,scenario,accuracy_mean,accuracy_std,precision_macro_mean,precision_macro_std,recall_macro_mean,recall_macro_std,f1_macro_mean,f1_macro_std
+mobilenet_v2,raw,0.850242,0.035746,0.867063,0.038209,0.845569,0.036374,0.848480,0.037784
+efficientnet_b0,raw,0.850543,0.032947,0.877277,0.027322,0.846010,0.039903,0.850532,0.037852
+mobilenet_v2,pcd,0.822162,0.049483,0.832415,0.058298,0.818342,0.046373,0.820356,0.049156
+efficientnet_b0,pcd,0.807065,0.022243,0.832027,0.000857,0.804894,0.022323,0.805929,0.021476

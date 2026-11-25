@@ -60,8 +60,8 @@ SCENARIOS = {
                 desc="Foto mentah, fitur warna/tekstur/bentuk, SVM / Random Forest"),
     3: Scenario(id=3, name="Skenario 3: PCD + Deep Learning", short="PCD + DL", tag="pcd",
                 use_pcd=True, kind="dl", file="dl_pcd.pt",
-                desc="PCD, MobileNetV2 (transfer learning)"),
+                desc="PCD, model Deep Learning dengan transfer learning"),
     4: Scenario(id=4, name="Skenario 4: Raw + Deep Learning", short="Raw + DL", tag="raw",
                 use_pcd=False, kind="dl", file="dl_raw.pt",
-                desc="Foto mentah, MobileNetV2 (transfer learning)"),
+                desc="Foto mentah, model Deep Learning dengan transfer learning"),
 }

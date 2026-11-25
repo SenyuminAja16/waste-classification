@@ -17,7 +17,7 @@ Final Project PCD & Visi Komputer. Empat skenario dibandingkan:
 | `dataset/` | Akuisisi, validasi, pembagian per objek, dan notebook eksplorasi data. |
 | `pcd/` | Pipeline pengolahan citra, anotasi mask, dan evaluasi segmentasi. |
 | `ml/` | Ekstraksi fitur, kandidat model, serta script training dan analisis ML. |
-| `dl/` | Konfigurasi YAML, training MobileNetV2, dan evaluasi checkpoint. |
+| `dl/` | Konfigurasi YAML, training MobileNetV2, EfficientNet-B0, atau ConvNeXt V2 Femto, dan evaluasi checkpoint. |
 | `demo/` | Aplikasi Streamlit dan inferensi. |
 | `reports/` | Hasil evaluasi dataset, PCD, dan eksperimen model. |
 | `report/` | Naskah laporan LaTeX. |
@@ -35,7 +35,7 @@ Script menyimpan foto di `data/raw/` dan metadata di `data/metadata.csv`. Foto a
 
 ## Eksperimen Deep Learning
 
-Edit [`dl/config.yaml`](dl/config.yaml) untuk memilih `raw`, `pcd`, atau `both` serta mengatur hyperparameter. Jalankan training, lalu evaluasi checkpoint terpilih pada test menggunakan folder run yang dicetak saat training.
+Edit [`dl/config.yaml`](dl/config.yaml) untuk memilih model, skenario `raw`, `pcd`, atau `both`, dan hyperparameter. Konfigurasi awal melatih head MobileNetV2 pada Raw. Evaluasi checkpoint terpilih pada test menggunakan folder run yang dicetak saat training.
 
 ```bash
 uv run --group dl python -m dl.train

@@ -1,0 +1,37 @@
+seed: 42
+device: auto
+data:
+  scenario: raw
+  metadata: data/metadata.csv
+  batch_size: 16
+  image_size: 224
+  augmentation:
+    enabled: true
+    horizontal_flip: 0.5
+    rotation: 10.0
+    brightness: 0.2
+    contrast: 0.2
+    mode: offline
+    variants_per_photo: 2
+model:
+  name: efficientnet_b0
+  pretrained: true
+  dropout: 0.2
+optimizer:
+  name: adamw
+  weight_decay: 0.0
+train:
+  epochs_head: 10
+  epochs_finetune: 3
+  finetune_blocks: 1
+  lr_head: 0.001
+  lr_finetune: 0.0001
+  early_stopping_patience: 0
+kfold:
+  n_splits: 3
+  models:
+  - mobilenet_v2
+  - efficientnet_b0
+  pcd_calibration: pcd/ground_truth/selection.csv
+output:
+  dir: reports/dl/offline_followup

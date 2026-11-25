@@ -1,19 +1,41 @@
 seed: 42
-device: auto # auto, cpu, atau cuda
+device: auto # auto | cpu | cuda
 
 data:
-  scenario: both # raw, pcd, atau both
+  scenario: both # raw | pcd | both
   metadata: data/metadata.csv
   batch_size: 16
+  image_size: 224
+  augmentation: # hanya untuk train
+    enabled: true
+    mode: online # online | offline
+    variants_per_photo: 2 # hanya untuk mode offline
+    horizontal_flip: 0.5
+    rotation: 10
+    brightness: 0.2
+    contrast: 0.2
 
 model:
-  pretrained: true # bobot ImageNet untuk MobileNetV2
+  name: efficientnet_b0 # mobilenet_v2 | efficientnet_b0 | convnextv2_femto
+  pretrained: true
+  dropout: 0.2
+
+optimizer:
+  name: adamw # adam | adamw
+  weight_decay: 0.0
 
 train:
-  epochs_head: 5
-  epochs_finetune: 10
+  epochs_head: 10
+  epochs_finetune: 3 # 0 = latih head saja
+  finetune_blocks: 1 # jumlah blok/stage terakhir yang dibuka saat fine-tuning
   lr_head: 0.001
   lr_finetune: 0.0001
+  early_stopping_patience: 0 # 0 = jalankan semua epoch
+
+kfold:
+  n_splits: 3
+  models: [mobilenet_v2, efficientnet_b0]
+  pcd_calibration: pcd/ground_truth/selection.csv # objek ini tetap berada di train setiap fold
 
 output:
   dir: reports/dl # tiap skenario dan percobaan punya folder sendiri

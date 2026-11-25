@@ -1,0 +1,5 @@
+model,scenario,f1_tanpa_mean,f1_tanpa_std,f1_online_mean,f1_online_std,f1_offline_mean,f1_offline_std,delta_offline_vs_online_mean,delta_offline_vs_online_std,delta_offline_vs_tanpa_mean,delta_offline_vs_tanpa_std
+mobilenet_v2,raw,0.827026,0.040890,0.848480,0.037784,0.856296,0.030176,0.007816,0.015786,0.029270,0.045582
+efficientnet_b0,raw,0.880952,0.032711,0.850532,0.037852,0.851857,0.022711,0.001325,0.047765,-0.029095,0.055356
+mobilenet_v2,pcd,0.804161,0.018129,0.820356,0.049156,0.812060,0.012548,-0.008296,0.055107,0.007899,0.014375
+efficientnet_b0,pcd,0.798620,0.035246,0.805929,0.021476,0.753408,0.073223,-0.052521,0.091003,-0.045212,0.039518

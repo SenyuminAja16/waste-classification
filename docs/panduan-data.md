@@ -35,7 +35,7 @@ Di laptop, cukup sekali setelah clone:
 2. Salin `.env.example` menjadi `.env`, lalu isi `WASTE_SHEET_ID` dengan ID Google Sheet log akuisisi. ID-nya ada di grup, tidak disimpan di repo.
 3. Jalankan script dari root repo dengan `uv run python -m <modul>`.
 
-Di Colab, clone repo lalu jalankan `pip install -e . pyyaml` dari root repo. Simpan ID Sheet di Colab Secrets dengan nama `WASTE_SHEET_ID`, kemudian set ke environment sebelum meng-import `core`:
+Di Colab, clone repo lalu jalankan `pip install -e . pyyaml 'timm>=1.0.15,<2'` dari root repo. Simpan ID Sheet di Colab Secrets dengan nama `WASTE_SHEET_ID`, kemudian set ke environment sebelum meng-import `core`:
 
 ```python
 import os
@@ -148,19 +148,26 @@ Setelah `data/metadata.csv` dan foto tersedia, edit [`dl/config.yaml`](../dl/con
 uv run --group dl python -m dl.train
 ```
 
-Atur `data.scenario` ke `raw`, `pcd`, atau `both`. Gunakan `both` untuk membandingkan kedua skenario dengan pengaturan yang sama. Batch size ada di `data.batch_size`. Jumlah epoch dan learning rate untuk kedua fase ada di bagian `train`. `--config path/eksperimen.yaml` bisa dipakai untuk menjalankan salinan konfigurasi lain. Di Colab, gunakan `python -m dl.train`.
+Atur `model.name` ke `mobilenet_v2`, `efficientnet_b0`, atau `convnextv2_femto`. Gunakan `data.scenario: raw` untuk benchmark Raw, `pcd` untuk PCD saja, atau `both` untuk membandingkan kedua skenario dengan pengaturan yang sama. Ketiga model mendukung bobot pretrained. ConvNeXt V2 Femto dimuat melalui `timm`.
+
+Konfigurasi awal memakai input 224, batch 16, dan 10 epoch untuk head. Ubah `model.dropout`, `data.augmentation`, dan `optimizer` untuk eksperimen regularisasi. `train.epochs_finetune: 0` hanya melatih head. Untuk fine-tuning, naikkan `epochs_finetune` dan tentukan `finetune_blocks` untuk membuka unit terakhir backbone sesuai urutan model. `train.early_stopping_patience` berlaku per fase, dengan nilai `0` untuk menjalankan semua epoch.
+
+`data.augmentation.mode: online` membuat variasi saat foto dimuat. Mode `offline` menyiapkan `variants_per_photo` variasi tetap per foto train sebelum pelatihan dan menyimpannya di memori. Setiap epoch mengambil satu versi per foto sumber dan mengunjungi semua versi dalam satu siklus. Dengan batch size dan jumlah epoch yang sama, jumlah langkah optimizer setara dengan mode online. Foto validation dan test memakai versi asli tanpa augmentasi.
+
+Untuk menyimpan pengaturan beberapa eksperimen, buat salinan YAML dan jalankan `uv run --group dl python -m dl.train --config path/eksperimen.yaml`. Di Colab, gunakan `python -m dl.train`.
 
 | Modul di `dl/` | Tanggung jawab |
 |---|---|
 | `config.py` | Baca dan validasi YAML, tentukan folder run. |
 | `data.py`, `transforms.py` | Baca metadata, siapkan Raw dan PCD, augmentasi train, dan preprocessing untuk inferensi. |
-| `model.py` | Bangun MobileNetV2 dan atur blok yang dilatih di tiap fase. |
+| `model.py` | Bangun arsitektur yang dipilih dan atur blok yang dilatih di tiap fase. |
 | `engine.py` | Jalankan training atau evaluasi satu epoch. |
 | `logger.py`, `utils.py` | Catat riwayat epoch, atur seed dan device, serta muat bobot. |
 | `train.py` | Jalankan kedua fase training dan simpan checkpoint terbaik. |
 | `predict.py` | Evaluasi checkpoint terpilih pada split test. |
+| `kfold.py` | Ukur kestabilan skor dengan validasi silang per objek pada split train. |
 
-Setiap skenario menyimpan checkpoint `best.pt` berdasarkan F1 macro validation, `history.json`, metrik dan confusion matrix validation, serta salinan konfigurasi dan metadata di folder baru di bawah `reports/dl/`. Terminal menampilkan lokasi foldernya.
+Terminal menampilkan progress per batch dan ringkasan per epoch. Setiap skenario menyimpan checkpoint `best.pt` berdasarkan F1 macro validation, `history.json`, `learning_curves.png`, metrik dan confusion matrix validation, serta salinan konfigurasi dan metadata di folder baru di bawah `reports/dl/`.
 
 Setelah memilih run final, jalankan perintah berikut untuk mengevaluasi `best.pt` pada foto test yang tercatat di metadata run itu. Ganti `RUN_DIR` dengan folder run yang ditampilkan oleh training.
 
@@ -168,4 +175,10 @@ Setelah memilih run final, jalankan perintah berikut untuk mengevaluasi `best.pt
 uv run --group dl python -m dl.predict RUN_DIR
 ```
 
-Hasil evaluasi disimpan sebagai `test.json` dan `test_cm.png` di folder run. Untuk demo, salin `best.pt` dari run Raw sebagai `models/dl_raw.pt` dan dari run PCD sebagai `models/dl_pcd.pt`.
+Hasil evaluasi disimpan sebagai `test.json` dan `test_cm.png` di folder run. Untuk demo, salin `best.pt` dari run Raw sebagai `models/dl_raw.pt` dan dari run PCD sebagai `models/dl_pcd.pt`. Checkpoint menyimpan arsitektur dan ukuran input, sehingga evaluasi dan demo dapat memuatnya tanpa melihat konfigurasi eksperimen yang sedang aktif.
+
+### Validasi silang DL
+
+Jalankan `uv run --group dl python -m dl.kfold`. Bagian `kfold` di YAML menentukan jumlah fold dan daftar model. Dengan `data.scenario: both`, ketiga fold dipakai bersama oleh MobileNetV2 dan EfficientNet-B0 pada Raw dan PCD. Gunakan hyperparameter yang sudah dipilih untuk eksperimen utama.
+
+Fold dibentuk dari split train berdasarkan `object_id`. Objek yang dipakai untuk anotasi acuan dan eksplorasi PCD selalu masuk train pada setiap fold. Validation asli memilih checkpoint, objek yang ditahan di tiap fold dipakai untuk menghitung skor, dan split test asli tetap terpisah. Varian offline dibuat setelah fold dipisah, hanya dari foto train pada fold tersebut. Rata-rata dan simpangan baku antar-fold ada di `reports/dl/kfold_*/summary.md` dan `summary.csv`. `fold_metrics.csv` memuat skor individual, jumlah gambar train, dan langkah optimizer per epoch. `paired_delta_f1.csv` merangkum selisih PCD − Raw pada fold yang sama.

@@ -8,8 +8,7 @@ import numpy as np
 
 from core.config import CLASSES, MODELS_DIR, SCENARIOS
 from core.image import resize_43
-from dl.model import build_model
-from dl.transforms import to_rgb224, to_tensor
+from dl.transforms import to_rgb, to_tensor
 from ml.features import extract_features
 from pcd.pipeline import run_pcd
 
@@ -63,17 +62,17 @@ def _predict_ml(path: Path, img, mask) -> np.ndarray:
 
 
 @lru_cache(maxsize=2)
-def _load_dl(path: str):
-    import torch
-    m = build_model(pretrained=False)
-    m.load_state_dict(torch.load(path, map_location="cpu"))
-    return m.eval()
+def _load_dl(path: Path, _mtime_ns: int):
+    from dl.utils import load_checkpoint
+
+    model, image_size = load_checkpoint(path, "cpu")
+    return model.eval(), image_size
 
 
 def _predict_dl(path: Path, img) -> np.ndarray:
     import torch
-    model = _load_dl(str(path))
-    x = to_tensor(to_rgb224(img)).unsqueeze(0)
+    model, image_size = _load_dl(path, path.stat().st_mtime_ns)
+    x = to_tensor(to_rgb(img, image_size)).unsqueeze(0)
     with torch.no_grad():
         return torch.softmax(model(x), dim=1)[0].numpy()
 

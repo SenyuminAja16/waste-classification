@@ -1,0 +1,47 @@
+{
+  "accuracy": 0.8541666666666666,
+  "precision_macro": 0.8711843711843712,
+  "recall_macro": 0.8541666666666666,
+  "f1_macro": 0.8530392461426944,
+  "per_class": {
+    "plastik": {
+      "precision": 0.7619047619047619,
+      "recall": 1.0,
+      "f1": 0.8648648648648649,
+      "support": 16
+    },
+    "kertas": {
+      "precision": 0.9285714285714286,
+      "recall": 0.8125,
+      "f1": 0.8666666666666667,
+      "support": 16
+    },
+    "kardus": {
+      "precision": 0.9230769230769231,
+      "recall": 0.75,
+      "f1": 0.8275862068965517,
+      "support": 16
+    }
+  },
+  "confusion_matrix": [
+    [
+      16,
+      0,
+      0
+    ],
+    [
+      2,
+      13,
+      1
+    ],
+    [
+      3,
+      1,
+      12
+    ]
+  ],
+  "n_test": 48,
+  "scenario": "pcd",
+  "model": "mobilenet_v2",
+  "loss": 0.3675033325950305
+}

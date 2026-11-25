@@ -64,7 +64,7 @@ with right:
         except NotImplementedError as e:
             st.warning(f"Bagian ini belum diisi: {e}")
         except ImportError:
-            st.error("Skenario Deep Learning butuh `torch` dan `torchvision`. Jalankan `uv sync --group dl`.")
+            st.error("Dependensi Deep Learning belum lengkap. Jalankan `uv sync --group dl`.")
         else:
             info = CLASS_INFO[res.label]
             st.markdown(f"## {info['emoji']} {info['title']}")
